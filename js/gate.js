@@ -3,9 +3,9 @@
   if (/\/desk(\/|$)/.test(location.pathname)) return;
   var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
   if (path === "/" || path === "/index.html") return;
+  if (document.cookie.indexOf("fr_gate_skip=1") !== -1) return;
   var ua = navigator.userAgent || "";
   if (/bot|crawler|spider|googlebot|bingbot|slurp|duckduckbot/i.test(ua)) return;
-  if (document.cookie.indexOf("fr_gate_skip=1") !== -1) return;
 
   function api(method, body) {
     var opt = { method: method, credentials: "include", headers: {} };
