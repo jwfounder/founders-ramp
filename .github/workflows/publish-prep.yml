@@ -1,0 +1,64 @@
+name: One-off publish prep
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: FAQ footer link, Approach card, sitemap, llms.txt
+        run: |
+          python3 - <<'PY'
+          import os, re
+          ROOT = os.getcwd()
+          MAIL = '<a href="mailto:jw@foundersramp.net">jw@foundersramp.net</a>'
+          FOOT = MAIL + ' \u00b7 <a href="/faq/">FAQ</a>'
+          n = 0
+          for dp, dns, fns in os.walk(ROOT):
+              dns[:] = [d for d in dns if not d.startswith(".")]
+              for fn in fns:
+                  if not fn.endswith(".html") or (dp == ROOT and fn == "index.html"):
+                      continue
+                  fp = os.path.join(dp, fn); s = open(fp, encoding="utf-8").read(); o = s
+                  if 'href="/faq/">FAQ</a>' not in s:
+                      s = re.sub(r'(<footer>.*?)<div>(?:<a href="mailto:jw@foundersramp\.net">)?jw@foundersramp\.net(?:</a>)?</div>', lambda m: m.group(1) + "<div>" + FOOT + "</div>", s, count=1, flags=re.S)
+                  if s != o:
+                      open(fp, "w", encoding="utf-8").write(s); n += 1
+          print("footers", n)
+          p = "approach/index.html"; s = open(p, encoding="utf-8").read()
+          anchor = '''            <span class="more">Books that are fundamental</span>
+                    </a>
+          '''
+          card = '''          <a class="card topic" href="/faq/">
+                      <p class="meta">Questions</p>
+                      <h3>Questions founders ask</h3>
+                      <p>When to hire, how to step out of every sales call, and what happens when you click Let me help.</p>
+                      <span class="more">Read the answers</span>
+                    </a>
+          '''
+          assert anchor in s and 'href="/faq/"' not in s.split("<footer>")[0]
+          s = s.replace(anchor, anchor + card, 1); open(p, "w", encoding="utf-8").write(s); print("approach card added")
+          p = "sitemap.xml"; s = open(p, encoding="utf-8").read()
+          new = ["https://www.foundersramp.net/faq/", "https://www.foundersramp.net/answers/when-to-hire-your-first-ae/", "https://www.foundersramp.net/answers/how-to-move-off-founder-led-sales/", "https://www.foundersramp.net/answers/fractional-sales-leader-vs-vp-of-sales/"]
+          add = "".join(f"  <url><loc>{u}</loc><lastmod>2026-10-02</lastmod></url>\n" for u in new if u not in s)
+          s = s.replace("</urlset>", add + "</urlset>"); open(p, "w", encoding="utf-8").write(s); print("sitemap +", add.count("<loc>"))
+          p = "llms.txt"; s = open(p, encoding="utf-8").read()
+          block = """
+          ## Answers
+          - [Questions founders ask](https://www.foundersramp.net/faq/): What Founders Ramp is, who it's for, how an engagement works, and what happens when you click Let me help
+          - [When to hire your first AE](https://www.foundersramp.net/answers/when-to-hire-your-first-ae/): When the GTM strategy shows it works and can scale, and you can write down how you qualify, inspect, and advance a deal
+          - [How to move off founder-led sales](https://www.foundersramp.net/answers/how-to-move-off-founder-led-sales/): You change roles. Write the motion, hire someone to run it, then step out of the next call
+          - [Fractional sales leader vs VP of Sales](https://www.foundersramp.net/answers/fractional-sales-leader-vs-vp-of-sales/): Build the motion before you hire a VP to scale it
+          """
+          if "/faq/" not in s:
+              s = s.replace("\n## Approach\n", block + "\n## Approach\n", 1); open(p, "w", encoding="utf-8").write(s); print("llms.txt answers section added")
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A '*.html' sitemap.xml llms.txt
+          git commit -m "Link the FAQ from every footer and from Approach; add FAQ and answer pages to sitemap.xml and llms.txt"
+          git push
