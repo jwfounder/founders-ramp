@@ -1,0 +1,27 @@
+/* Home hero: copy left, CTA right, wide references band below */
+body.page-home .hero-split {
+  grid-template-columns: 1fr minmax(260px, 22rem);
+  align-items: center;
+  margin: 0 0 20px;
+}
+body.page-home .hero-split .consult-box { width: 100%; box-sizing: border-box; }
+body.page-home .hero-copy .lede { margin-bottom: 0; }
+body.page-home .ref-box.ref-wide {
+  max-width: none;
+  margin: 0 0 4px;
+  padding: 12px 18px 10px;
+}
+body.page-home .ref-wide .ref-track { display: grid; }
+body.page-home .ref-wide .ref-slide {
+  display: block;
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+body.page-home .ref-wide .ref-slide.on { visibility: visible; }
+body.page-home .ref-wide .ref-slide p { margin: 0 0 6px; }
+body.page-home .home-stage { padding: 40px 0; }
+body.page-home .home-stage .stage { margin: 0 auto; }
+@media (max-width: 860px) {
+  body.page-home .hero-split { grid-template-columns: 1fr; gap: 16px; }
+  body.page-home .home-stage { padding: 28px 0; }
+}
