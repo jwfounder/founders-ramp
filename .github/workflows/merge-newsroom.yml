@@ -1,0 +1,31 @@
+name: One-off merge Newsroom redesign
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Rebase newsroom/redesign onto main and fast-forward main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin newsroom/redesign
+          git rm -q .github/workflows/merge-newsroom.yml
+          git commit -q -m "Remove one-off Newsroom merge workflow"
+          BASE=$(git rev-parse HEAD)
+          git checkout -q -b nr origin/newsroom/redesign
+          git rebase --onto "$BASE" 77b09d3fb nr
+          CHANGED=$(git diff --name-only "$BASE" HEAD | grep -v '^briefing/' | grep -v '^assets/newsroom/' || true)
+          if [ -n "$CHANGED" ]; then echo "Unexpected paths: $CHANGED"; exit 1; fi
+          test ! -e .github/workflows/merge-newsroom.yml
+          test ! -e .github/workflows/newsroom-build.yml
+          test ! -e .newsroom
+          test -f approach/index.html && grep -c 'class="topic-row"' approach/index.html
+          git log --oneline -6
+          git push origin HEAD:main
