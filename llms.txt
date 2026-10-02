@@ -41,4 +41,6 @@ Contact: jw@foundersramp.net
 - [Language in business](https://www.foundersramp.net/writings/language-in-business)
 - [SpaceX as ERP strategy](https://www.foundersramp.net/writings/spacex-erp)
 - [From chatbots to agentic procurement](https://www.foundersramp.net/writings/agentic-procurement)
+- [One person loved the demo. The company never decided.](https://www.foundersramp.net/writings/one-person-loved-the-demo): Name the economic buyer, the champion, and who is hurt if this slips
+- [We already use something for that.](https://www.foundersramp.net/writings/we-already-use-something): Ask what happens after the data leaves that system
 - [Newsroom](https://www.foundersramp.net/briefing/): What operators are sharing
