@@ -1,0 +1,97 @@
+name: One-off site cleanup
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore missing images from the old Pages deploy
+        run: |
+          set -e
+          mkdir -p assets/books
+          for p in books/vito.jpg books/seven-habits.jpg books/sales-management-code.jpg books/one-minute-manager.jpg books/never-split.jpg books/mega-deal-secrets.jpg books/high-profit-prospecting.jpg books/extreme-ownership.jpg books/eat-their-lunch.jpg books/challenger-sale.jpg equal-commitment.jpg glengarry-glen-ross.jpg language-in-business-li.jpg self-team-card.png focus-dashboard-actions.png; do
+            ct=$(curl -sL -m 60 -o "assets/$p" -w '%{content_type}' "https://foundersramp.pages.dev/assets/$p")
+            case "$ct" in image/*) echo "ok $p $(stat -c%s assets/$p)";; *) echo "MISS $p $ct"; rm -f "assets/$p"; exit 1;; esac
+          done
+          ct=$(curl -sL -m 60 -o assets/five-green-fields.jpg -w '%{content_type}' https://litter.catbox.moe/p9pyi8.jpg || true)
+          case "$ct" in image/*) echo "ok poster $(stat -c%s assets/five-green-fields.jpg)";; *) echo "poster unavailable: $ct"; rm -f assets/five-green-fields.jpg;; esac
+          git rm -q --ignore-unmatch assets/five-green-fields-hiro.jpg
+      - name: Clean pages
+        run: |
+          python3 - <<'PY'
+          """One-off site cleanup. Run from repo root."""
+          import os, re, posixpath, sys
+
+          ROOT = os.getcwd()
+          EMAIL = "jw@foundersramp.net"
+          changed = []
+
+          def cf_decode(hexs):
+              k = int(hexs[:2], 16)
+              return "".join(chr(int(hexs[i:i+2], 16) ^ k) for i in range(2, len(hexs), 2))
+
+          def clean_href(href, filedir):
+              if re.match(r"^(https?:|mailto:|tel:|#|//)", href) or href.startswith("/cdn-cgi/"):
+                  return href
+              path, sep, frag = href.partition("#")
+              if not (path.endswith(".html")):
+                  return href
+              absp = posixpath.normpath(posixpath.join("/" + filedir, path)) if not path.startswith("/") else path
+              if absp.endswith("/index.html"):
+                  absp = absp[: -len("index.html")]
+              elif absp.endswith(".html"):
+                  absp = absp[: -len(".html")]
+              if absp in ("/home/",):
+                  absp = "/"
+              return absp + (sep + frag if frag else "")
+
+          for dp, dns, fns in os.walk(ROOT):
+              dns[:] = [d for d in dns if not d.startswith(".") and d != "node_modules"]
+              for fn in fns:
+                  if not fn.endswith(".html"):
+                      continue
+                  fp = os.path.join(dp, fn)
+                  rel = os.path.relpath(fp, ROOT).replace(os.sep, "/")
+                  filedir = posixpath.dirname(rel)
+                  s = open(fp, encoding="utf-8").read()
+                  o = s
+                  # 1. retired tracker tag
+                  s = re.sub(r"[ \t]*<script[^>]*src=\"[^\"]*js/hit\.js[^\"]*\"[^>]*></script>[ \t]*\n?", "", s)
+                  # 2. Cloudflare email obfuscation markup -> plain mailto
+                  def em(m):
+                      addr = cf_decode(m.group(1))
+                      assert addr == EMAIL, (rel, addr)
+                      return f'<a href="mailto:{EMAIL}">{EMAIL}</a>'
+                  s = re.sub(r'<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="([0-9a-f]+)">\[email&#160;protected\]</a>', em, s)
+                  s = re.sub(r'<script data-cfasync="false" src="/cdn-cgi/scripts/[^"]*/cloudflare-static/email-decode\.min\.js"></script>', "", s)
+                  # 3. clean internal links
+                  s = re.sub(r'href="([^"]*)"', lambda m: 'href="%s"' % clean_href(m.group(1), filedir), s)
+                  # 4. services: drop the "No fees" line
+                  s = s.replace(" No fees on this page.</p>", "</p>")
+                  # 5. 5 Green Fields poster onto own assets
+                  if os.path.exists(os.path.join(ROOT, "assets/five-green-fields.jpg")):
+                      s = s.replace("https://litter.catbox.moe/p9pyi8.jpg", "../assets/five-green-fields.jpg")
+                  # 6. Hiro panels: drop any figure whose image file isn't in the repo
+                  def fig(m):
+                      src = m.group(2)
+                      target = posixpath.normpath(posixpath.join(filedir, src))
+                      return m.group(0) if os.path.exists(os.path.join(ROOT, target)) else ""
+                  s = re.sub(r'\n[ \t]*<figure class="stage">\s*<img src="(([^"]*hiro-0\d\.jpg))"[^>]*>\s*<figcaption>.*?</figcaption>\s*</figure>\n', lambda m: "\n" if fig(m) == "" else m.group(0), s, flags=re.S)
+                  if s != o:
+                      open(fp, "w", encoding="utf-8").write(s)
+                      changed.append(rel)
+          print("changed", len(changed))
+          for c in sorted(changed):
+              print(" ", c)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A assets '*.html'
+          git status --short
+          git commit -m "Restore missing images, move 5 Green Fields poster on-site, drop hit.js tags, plain mailto footers, clean internal links, remove No fees line"
+          git push
