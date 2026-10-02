@@ -1,0 +1,34 @@
+name: Blog build (one-off)
+on:
+  push:
+    branches: [blog/2026-10-02]
+    paths: [".github/workflows/blog-build.yml"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pillow==12.3.0
+      - name: Fonts (Barlow Condensed, OFL)
+        run: |
+          mkdir -p /tmp/fonts
+          for w in Bold ExtraBold SemiBold; do curl -sfLo /tmp/fonts/BarlowCondensed-$w.ttf https://raw.githubusercontent.com/google/fonts/main/ofl/barlowcondensed/BarlowCondensed-$w.ttf; done
+          md5sum /tmp/fonts/*
+      - run: FONTDIR=/tmp/fonts python3 .blogbuild/render.py
+      - run: python3 .blogbuild/compose_existing.py
+      - run: FONTDIR=/tmp/fonts python3 .blogbuild/render_news.py
+      - run: python3 .blogbuild/apply.py
+      - name: Commit and remove one-off files
+        run: |
+          md5sum assets/writings/* assets/newsroom/2026-09-24-how-vc-funded-saas-gtm-strategies-differ-from-bootstrapped.webp assets/newsroom/2026-09-01-alright-will-allred.webp
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -rq .blogbuild .github/workflows/blog-build.yml
+          git add -A writings briefing assets sitemap.xml llms.txt
+          git commit -m "Blog: colorful image cards, curated order, two new articles; Newsroom description fix and two visuals"
+          git push
