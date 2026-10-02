@@ -1,5 +1,3 @@
-const ORIGIN = "https://foundersramp.pages.dev";
-
 const REB2B =
   '<script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("Z6PVLHZZK96R");</script>';
 
@@ -15,20 +13,10 @@ class HeadInjector {
   }
 }
 
-function proxy(request, apiPath) {
-  const url = new URL(request.url);
-  const dest = new URL(apiPath + url.search, ORIGIN);
-  const headers = new Headers(request.headers);
-  headers.delete("host");
-  const init = {
-    method: request.method,
-    headers,
-    redirect: "manual",
-  };
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    init.body = request.body;
-  }
-  return fetch(dest, init);
+// Retired first-party trackers. They used to write every view and gate submit
+// into DNS as TXT records. Answer 204 and write nothing so cached pages don't error.
+function retired() {
+  return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
 }
 
 export default {
@@ -43,11 +31,13 @@ export default {
       url.pathname = "/";
       return Response.redirect(url.toString(), 301);
     }
-    if (path === "/api/hit" || path.startsWith("/api/hit/")) {
-      return proxy(request, "/api/hit");
-    }
-    if (path === "/api/gate" || path.startsWith("/api/gate/")) {
-      return proxy(request, "/api/gate");
+    if (
+      path === "/api/hit" ||
+      path.startsWith("/api/hit/") ||
+      path === "/api/gate" ||
+      path.startsWith("/api/gate/")
+    ) {
+      return retired();
     }
     let response;
     if (path === "/") {
@@ -62,6 +52,7 @@ export default {
     }
     return new HTMLRewriter()
       .on('script[src*="js/gate.js"]', new DropScript())
+      .on('script[src*="js/hit.js"]', new DropScript())
       .on("head", new HeadInjector())
       .transform(response);
   },
