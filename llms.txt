@@ -1,23 +1,38 @@
 # Founders Ramp
 > Justin Weller helps founders build a repeatable go-to-market strategy that leads to exponential growth.
 
+Founders Ramp (no apostrophe) is run by Justin Weller, an enterprise software seller and sales leader who was on Workiva's original sales team. It's for founders and launch teams who still own the pipeline, whether they have no sellers, one seller, or five. We aren't their VP. The way in is simple: bring one issue or one deal, and we'll work it together and set a game plan.
+
 Crunchbase: https://www.crunchbase.com/organization/founders-ramp
+LinkedIn: https://www.linkedin.com/in/jweller
+Contact: jw@foundersramp.net
 
-Founders Ramp (no apostrophe) is taught by Justin Weller. Public door is a free 30-minute consultation. We are not their VP.
+## Start here
+- [Home](https://www.foundersramp.net/): Build a repeatable go-to-market strategy
+- [Approach](https://www.foundersramp.net/approach/): Build a go-to-market that works
+- [Services](https://www.foundersramp.net/services/): Sales Strategy, Sales Process, Sales Management, Installing the team, Deal and Call Coaching
+- [About](https://www.foundersramp.net/about/): Justin Weller and why Founders Ramp exists
+- [Let me help: book a call with Justin](https://cal.com/justin-weller-nsrjlg/30min)
 
-## Canonical
-- [Approach](https://www.foundersramp.net/approach/): Build a repeatable go-to-market strategy
+## Approach
 - [Self and team](https://www.foundersramp.net/approach/self-team/): You still own it. Then someone else does.
 - [Discovery](https://www.foundersramp.net/approach/discovery/): Their week, not your deck
 - [First call](https://www.foundersramp.net/approach/first-call/): One live deal. Pass is allowed.
-- [SCALE](https://www.foundersramp.net/approach/scale/): The inspect, not the slogan
+- [SCALE](https://www.foundersramp.net/approach/scale/): Five things that have to be true in a deal
 - [Inspection](https://www.foundersramp.net/approach/inspection/): Watch the work
 - [Books](https://www.foundersramp.net/approach/books/): The books under the work
-- [Repeatable Forecast: 5 Green Fields](https://www.foundersramp.net/writings/five-green-fields.html): Crushing your forecast is awesome. It also means you need to get better at forecasting.
-- [Equal commitment](https://www.foundersramp.net/writings/equal-commitment.html): Match commitment or call the truth early
-- [The first hire freezes the process](https://www.foundersramp.net/writings/first-hire-freezes.html)
-- [Product-led distribution is an oxymoron](https://www.foundersramp.net/writings/product-distribution.html)
-- [What are you measuring](https://www.foundersramp.net/writings/what-are-you-measuring.html)
-- [Language in business](https://www.foundersramp.net/writings/language-in-business.html)
-- [Library](https://www.foundersramp.net/briefing/): The public shelf
-- [Book 30 minutes](https://cal.com/justin-weller-nsrjlg/30min)
+- [Lessons from the books](https://www.foundersramp.net/approach/books/lessons): What to do on Monday
+
+## Writings
+- [Repeatable Forecast: 5 Green Fields](https://www.foundersramp.net/writings/five-green-fields): Crushing your forecast is awesome. It also means you need to get better at forecasting.
+- [There is no transition out of sales as a founder](https://www.foundersramp.net/writings/no-transition)
+- [Are you hawking your shiny object?](https://www.foundersramp.net/writings/shiny-object)
+- [Glengarry Glen Ross sales lessons: Part 1](https://www.foundersramp.net/writings/glengarry-glen-ross)
+- [Equal commitment](https://www.foundersramp.net/writings/equal-commitment): Match commitment or call the truth early
+- [The first hire freezes the process](https://www.foundersramp.net/writings/first-hire-freezes)
+- [Product-led distribution is an oxymoron](https://www.foundersramp.net/writings/product-distribution)
+- [What are you measuring?](https://www.foundersramp.net/writings/what-are-you-measuring)
+- [Language in business](https://www.foundersramp.net/writings/language-in-business)
+- [SpaceX as ERP strategy](https://www.foundersramp.net/writings/spacex-erp)
+- [From chatbots to agentic procurement](https://www.foundersramp.net/writings/agentic-procurement)
+- [Newsroom](https://www.foundersramp.net/briefing/): What operators are sharing
