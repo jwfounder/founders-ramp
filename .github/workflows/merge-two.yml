@@ -1,0 +1,45 @@
+name: One-off merge home strip and og JPGs
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Rebase both branches onto main and fast-forward main
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin newsroom/home-strip blog/og-jpg
+          HS=$(git rev-parse origin/newsroom/home-strip 2>/dev/null || git ls-remote origin refs/heads/newsroom/home-strip | cut -f1)
+          OG=$(git rev-parse origin/blog/og-jpg 2>/dev/null || git ls-remote origin refs/heads/blog/og-jpg | cut -f1)
+          test "$(git rev-parse --short=7 $HS)" = "2edf58a"
+          test "$(git rev-parse --short=7 $OG)" = "d1532dc"
+          git rm -q .github/workflows/merge-two.yml
+          git commit -q -m "Remove one-off merge workflow for home strip and og JPGs"
+          START=$(git rev-parse HEAD)
+          git checkout -q -b out
+          for B in $HS $OG; do
+            OLD=$(git merge-base HEAD $B)
+            git checkout -q -b tmp $B
+            git rebase -q --onto out $OLD tmp
+            git checkout -q out
+            git merge -q --ff-only tmp
+            git branch -q -D tmp
+          done
+          CHANGED=$(git diff --name-only $START HEAD | grep -v '^home/index.html$' | grep -v '^css/home.css$' | grep -v '^writings/' | grep -v '^assets/writings/.*\.jpg$' || true)
+          if [ -n "$CHANGED" ]; then echo "Unexpected paths: $CHANGED"; exit 1; fi
+          test ! -e .github/workflows/merge-two.yml
+          test ! -e .github/workflows/og-jpg.yml
+          test ! -e .ogbuild
+          grep -q 'home.css?v=h2' home/index.html
+          grep -q 'class="home-news"' home/index.html
+          test "$(git ls-files 'assets/writings/*.jpg' | wc -l)" -ge 12
+          git log --oneline -6
+          git push origin HEAD:main
