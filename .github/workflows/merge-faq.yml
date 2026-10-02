@@ -1,0 +1,25 @@
+name: One-off merge FAQ pages
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Merge drafts/faq-answer-pages into main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin drafts/faq-answer-pages
+          git rm -q .github/workflows/merge-faq.yml
+          git commit -q -m "Remove one-off merge workflow"
+          git merge --no-ff origin/drafts/faq-answer-pages -m "Publish FAQ and three answer pages (approved by Justin): footer and Approach links, sitemap.xml, llms.txt"
+          test ! -e .github/workflows/publish-prep.yml
+          test ! -e .github/workflows/merge-faq.yml
+          git log --oneline -3
+          git push origin HEAD:main
