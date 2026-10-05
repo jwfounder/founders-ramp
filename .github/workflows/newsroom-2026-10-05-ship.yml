@@ -13,13 +13,30 @@ jobs:
         with:
           ref: newsroom/2026-10-05-ship
           fetch-depth: 0
-      - name: Decode WebP, patch pages, clean temps
+      - run: pip install pillow
+      - name: Build bright WebP, patch pages, clean temps
         run: |
           python3 <<'PY'
-          import base64, json, pathlib
-          b64_path = pathlib.Path("assets/newsroom/2026-10-05-schneider-electric-acquires-ptc-for-22-6-billion.webp.b64")
+          import json, pathlib
+          from PIL import Image, ImageDraw, ImageFont
+          W, H = 720, 378
+          im = Image.new("RGB", (W, H), (14, 116, 144))
+          d = ImageDraw.Draw(im)
+          d.rectangle([0, 0, 24, H], fill=(250, 204, 21))
+          d.rectangle([W - 24, 0, W, H], fill=(249, 115, 22))
+          d.rounded_rectangle([48, 48, W - 48, H - 48], radius=18, fill=(255, 255, 255))
+          try:
+              font_lg = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
+              font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+          except Exception:
+              font_lg = ImageFont.load_default(); font_sm = font_lg
+          d.text((72, 90), "Schneider Electric", fill=(15, 23, 42), font=font_lg)
+          d.text((72, 140), "acquires PTC", fill=(15, 23, 42), font=font_lg)
+          d.text((72, 210), "Buyers and markets · 2026-10-05", fill=(71, 85, 105), font=font_sm)
+          d.text((72, 250), "Design software at 30,000+ companies", fill=(71, 85, 105), font=font_sm)
           out = pathlib.Path("assets/newsroom/2026-10-05-schneider-electric-acquires-ptc-for-22-6-billion.webp")
-          out.write_bytes(base64.b64decode(b64_path.read_text().strip()))
+          out.parent.mkdir(parents=True, exist_ok=True)
+          im.save(out, "WEBP", quality=82, method=6)
           assert 3000 < out.stat().st_size < 150000, out.stat().st_size
           cards = json.loads(pathlib.Path("work/newsroom-2026-10-05-cards.json").read_text())
           briefing = pathlib.Path("briefing/index.html")
@@ -38,9 +55,9 @@ jobs:
               h = h.replace(cards["old_home"], "", 1)
               home.write_text(h, encoding="utf-8")
           for p in [
-              b64_path,
               pathlib.Path("work/newsroom-2026-10-05-cards.json"),
               pathlib.Path("assets/newsroom/2026-10-05-schneider-electric-acquires-ptc-for-22-6-billion.webp.b64.part4"),
+              pathlib.Path("assets/newsroom/2026-10-05-schneider-electric-acquires-ptc-for-22-6-billion.webp.b64"),
               pathlib.Path(".github/workflows/newsroom-2026-10-05-ship.yml"),
           ]:
               p.unlink(missing_ok=True)
