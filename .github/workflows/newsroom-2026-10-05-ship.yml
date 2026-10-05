@@ -1,0 +1,56 @@
+name: Newsroom 2026-10-05 assemble (one-off, removes itself)
+on:
+  push:
+    branches: [newsroom/2026-10-05-ship]
+    paths: [".github/workflows/newsroom-2026-10-05-ship.yml"]
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: newsroom/2026-10-05-ship
+          fetch-depth: 0
+      - name: Decode WebP, patch pages, clean temps
+        run: |
+          python3 <<'PY'
+          import base64, json, pathlib
+          b64_path = pathlib.Path("assets/newsroom/2026-10-05-schneider-electric-acquires-ptc-for-22-6-billion.webp.b64")
+          out = pathlib.Path("assets/newsroom/2026-10-05-schneider-electric-acquires-ptc-for-22-6-billion.webp")
+          out.write_bytes(base64.b64decode(b64_path.read_text().strip()))
+          assert 3000 < out.stat().st_size < 150000, out.stat().st_size
+          cards = json.loads(pathlib.Path("work/newsroom-2026-10-05-cards.json").read_text())
+          briefing = pathlib.Path("briefing/index.html")
+          s = briefing.read_text(encoding="utf-8")
+          if "2026-10-05-schneider-electric-acquires-ptc" not in s:
+              s = s.replace("All <span>29</span>", "All <span>30</span>", 1)
+              s = s.replace("Buyers and markets <span>6</span>", "Buyers and markets <span>7</span>", 1)
+              needle = '<div class="cards news-grid">\n'
+              s = s.replace(needle, needle + cards["briefing_card"] + "\n", 1)
+              briefing.write_text(s, encoding="utf-8")
+          home = pathlib.Path("home/index.html")
+          h = home.read_text(encoding="utf-8")
+          if "2026-10-05-schneider-electric-acquires-ptc" not in h:
+              needle = '<div class="cards news-strip">\n'
+              h = h.replace(needle, needle + cards["home_card"] + "\n", 1)
+              h = h.replace(cards["old_home"], "", 1)
+              home.write_text(h, encoding="utf-8")
+          for p in [
+              b64_path,
+              pathlib.Path("work/newsroom-2026-10-05-cards.json"),
+              pathlib.Path("assets/newsroom/2026-10-05-schneider-electric-acquires-ptc-for-22-6-billion.webp.b64.part4"),
+              pathlib.Path(".github/workflows/newsroom-2026-10-05-ship.yml"),
+          ]:
+              p.unlink(missing_ok=True)
+          print("ok", out.stat().st_size)
+          PY
+      - name: Commit assembled Newsroom card onto ship branch
+        run: |
+          git config user.name "jwfounder"
+          git config user.email "justinweller.jw@gmail.com"
+          git add -A
+          git status --short
+          git commit -m "Newsroom: Schneider Electric acquires PTC (2026-10-05)"
+          git push origin HEAD:newsroom/2026-10-05-ship
