@@ -1,0 +1,103 @@
+/* Design pass 2026-10-06: must+nice chrome (Sydney approved slice) */
+.btn.btn-lg {
+  font-size: 18px;
+  padding: 16px 26px;
+  font-weight: 600;
+}
+.card.topic {
+  border-top: 6px solid var(--red);
+}
+body.page-services .cards.offerings .card {
+  border-top: 5px solid var(--red);
+  box-shadow: 0 2px 0 rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.05);
+}
+body.page-services .cards.offerings .card:nth-child(3n+1) { background: #FBF5E6; }
+body.page-services .cards.offerings .card:nth-child(3n+2) { background: #F8D9D0; border-top-color: #e85a4f; }
+body.page-services .cards.offerings .card:nth-child(3n+3) { background: #fff; }
+body.page-tracker .week-pill {
+  display: inline-block;
+  background: #FBF5E6;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 999px;
+  padding: 5px 14px;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+body.page-tracker .tracker-week .week-count {
+  margin-left: 8px;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+}
+body.page-tracker table.tracker thead th {
+  position: sticky;
+  top: 64px;
+  z-index: 5;
+  background: #FBF5E6;
+  box-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+body.page-essay:has(article.payback) header.chrome::after {
+  content: "";
+  display: block;
+  height: 8px;
+  width: 100%;
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 55%, #e85a4f 100%);
+}
+.books-band {
+  background: #FBF5E6;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 8px;
+  padding: 22px 20px 8px;
+  margin: 8px 0 20px;
+}
+body.page-about .about-wins { padding: 8px 0 36px; }
+body.page-about .wins-scoreboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 22px;
+}
+body.page-about .wins-scoreboard .win.tile {
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 6px;
+  padding: 16px 14px 14px;
+  background: #fff;
+  border-top: 5px solid #e10600;
+  box-shadow: 0 2px 0 rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.06);
+}
+body.page-about .wins-scoreboard .win.tile:nth-child(3n+1) { background: #FBF5E6; }
+body.page-about .wins-scoreboard .win.tile:nth-child(3n+2) { background: #F8D9D0; border-top-color: #e85a4f; }
+body.page-about .wins-scoreboard .win.tile:nth-child(3n+3) { background: #fff; }
+body.page-about .wins-scoreboard .win.tile strong {
+  display: block;
+  font-size: 18px;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+body.page-about .wins-scoreboard .win.tile span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+@media (max-width: 860px) {
+  body.page-about .wins-scoreboard { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  body.page-about .wins-scoreboard { grid-template-columns: 1fr; }
+}
+.faq-cream {
+  background: #FBF5E6;
+  border: 1px solid rgba(0,0,0,.08);
+  border-left: 5px solid var(--red);
+  border-radius: 0 8px 8px 0;
+  padding: 18px 20px 16px;
+  margin: 0 0 28px;
+}
+.faq-cream h2 { margin-top: 0; }
