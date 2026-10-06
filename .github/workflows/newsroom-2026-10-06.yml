@@ -1,0 +1,106 @@
+name: Newsroom 2026-10-06 assemble (one-off, removes itself)
+on:
+  push:
+    branches: [newsroom/2026-10-06]
+    paths: [".github/workflows/newsroom-2026-10-06.yml"]
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: newsroom/2026-10-06
+          fetch-depth: 0
+      - run: pip install pillow
+      - name: Add card, refresh home strip, build WebP, remove one-off
+        run: |
+          python3 <<'PY'
+          import io, pathlib, urllib.request
+          from PIL import Image, ImageDraw, ImageFont
+          W, H = 720, 378
+          slug = "2026-10-06-orchestration-extended-sap-to-sell-oro-labs-platform"
+          out = pathlib.Path(f"assets/newsroom/{slug}.webp")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          import re
+          url = "https://sapinsider.org/blogs/orchestration-extended-sap-to-sell-oro-labs-platform/"
+          title = "Orchestration extended: SAP to sell ORO Labs platform"
+          alt = "Preview image from Annette Slunjski (SAPinsider): Orchestration extended: SAP to sell ORO Labs platform"
+          source = "Annette Slunjski (SAPinsider)"
+          body = "SAP will brand, sell, and support ORO Labs' procurement software, so SAP customers can buy it through the relationship they already have. Most startups first have to get set up as a new vendor, so ask early how long that takes."
+          img = f'<span class="thumb"><img src="../assets/newsroom/{slug}.webp" alt="{alt}" width="720" height="378" loading="lazy" decoding="async"></span>'
+          meta = '<span class="news-meta"><span class="news-topic">Pipeline and deals</span> <time datetime="2026-10-06">2026-10-06</time></span>'
+          I = " " * 10
+          bcard = (f'{I}<a class="card news" href="{url}" target="_blank" rel="noopener" data-topic="pipeline">\n'
+                   f'{I}  {img}\n{I}  <div class="news-body">\n{I}    {meta}\n{I}    <h3>{title}</h3>\n'
+                   f'{I}    <p>{body}</p>\n{I}    <span class="news-source">{source}</span>\n{I}  </div>\n{I}</a>\n')
+          hcard = (f'{I}<a class="card news" href="{url}" target="_blank" rel="noopener">\n'
+                   f'{I}  {img}\n{I}  <div class="news-body">\n{I}    {meta}\n{I}    <h3>{title}</h3>\n'
+                   f'{I}    <span class="news-source">{source}</span>\n{I}  </div>\n{I}</a>\n')
+          oldalt = "Preview image from Berry Zwets (Techzine Global): Schneider Electric acquires PTC for 22.6 billion"
+          newalt = "Bright illustration card reading Schneider Electric acquires PTC, design software at 30,000+ companies"
+          b = pathlib.Path("briefing/index.html"); s = b.read_text(encoding="utf-8")
+          assert url not in s
+          a = '        <div class="cards news-grid">\n'; assert s.count(a) == 1
+          s = s.replace(a, a + bcard, 1)
+          s = s.replace('aria-pressed="true">All <span>30</span>', 'aria-pressed="true">All <span>31</span>', 1)
+          s = s.replace('Pipeline and deals <span>8</span>', 'Pipeline and deals <span>9</span>', 1)
+          s = s.replace(oldalt, newalt)
+          assert 'All <span>31</span>' in s and 'Pipeline and deals <span>9</span>' in s
+          assert s.count('class="card news"') == 31 and s.count('data-topic="pipeline"') == 9
+          b.write_text(s, encoding="utf-8")
+          h = pathlib.Path("home/index.html"); s = h.read_text(encoding="utf-8")
+          a = '        <div class="cards news-strip">\n'; assert s.count(a) == 1
+          s = s.replace(a, a + hcard, 1)
+          s, n = re.subn(r' {10}<a class="card news" href="https://www\.levelpath\.com/blog/ranger-autonomous-procurement-platform" target="_blank" rel="noopener">\n.*?</a>\n', "", s, count=1, flags=re.S)
+          assert n == 1
+          s = s.replace(oldalt, newalt)
+          strip = s.split('cards news-strip')[1].split('<section')[0]
+          assert strip.count('class="card news"') == 3, strip.count('class="card news"')
+          h.write_text(s, encoding="utf-8")
+          src = "https://sapinsider.org/wp-content/uploads/2026/10/Image-for-ORO-release.png"
+          used_og = False
+          try:
+              req = urllib.request.Request(src, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36"})
+              im = Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=30).read())).convert("RGB")
+              r = max(W / im.width, H / im.height)
+              im = im.resize((round(im.width * r), round(im.height * r)), Image.LANCZOS)
+              l = (im.width - W) // 2; t = (im.height - H) // 2
+              im = im.crop((l, t, l + W, t + H))
+              used_og = True
+          except Exception as e:
+              print("og image failed, building bright card:", e)
+              im = Image.new("RGB", (W, H), (124, 58, 237))
+              d = ImageDraw.Draw(im)
+              d.rectangle([0, 0, 24, H], fill=(34, 197, 94))
+              d.rectangle([W - 24, 0, W, H], fill=(250, 204, 21))
+              d.rounded_rectangle([48, 48, W - 48, H - 48], radius=18, fill=(255, 255, 255))
+              try:
+                  lg = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
+                  sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+              except Exception:
+                  lg = ImageFont.load_default(); sm = lg
+              d.text((72, 90), "SAP to sell", fill=(15, 23, 42), font=lg)
+              d.text((72, 140), "ORO Labs platform", fill=(15, 23, 42), font=lg)
+              d.text((72, 210), "Pipeline and deals, 2026-10-06", fill=(71, 85, 105), font=sm)
+              d.text((72, 250), "Bought through the SAP relationship", fill=(71, 85, 105), font=sm)
+          im.save(out, "WEBP", quality=80, method=6)
+          assert 3000 < out.stat().st_size < 150000, out.stat().st_size
+          if not used_og:
+              old = "Preview image from Annette Slunjski (SAPinsider): Orchestration extended: SAP to sell ORO Labs platform"
+              new = "Bright illustration card reading SAP to sell ORO Labs platform"
+              for f in ["briefing/index.html", "home/index.html"]:
+                  p = pathlib.Path(f); p.write_text(p.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
+          for p in [pathlib.Path(".github/workflows/newsroom-2026-10-06.yml")]:
+              p.unlink(missing_ok=True)
+          print("ok", used_og, out.stat().st_size)
+          PY
+      - name: Commit assembled Newsroom card
+        run: |
+          git config user.name "jwfounder"
+          git config user.email "justinweller.jw@gmail.com"
+          git add -A
+          git status --short
+          git commit -m "Newsroom: SAP to sell ORO Labs platform (2026-10-06)"
+          git push origin HEAD:newsroom/2026-10-06
