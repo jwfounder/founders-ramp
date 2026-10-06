@@ -1,0 +1,42 @@
+/* First Sales Hire Tracker */
+body.page-tracker .hero {
+  background:
+    radial-gradient(1400px 160px at 50% -40%, rgba(225,6,0,.10), transparent 70%),
+    var(--bg);
+}
+.tracker-why .prose { max-width: 42rem; }
+.tracker-why h2, .tracker-list h2 { font-size: 30px; margin: 0 0 16px; }
+.tracker-list h3 { font-size: 24px; margin: 40px 0 12px; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--bg-2); }
+table.tracker { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.4; }
+table.tracker th {
+  text-align: left; font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; padding: 12px 14px; border-bottom: 2px solid var(--red);
+  background: var(--bg-2); white-space: nowrap;
+}
+table.tracker td { padding: 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.tracker tbody tr:last-child td { border-bottom: none; }
+table.tracker td:first-child { min-width: 14rem; }
+table.tracker td:last-child { min-width: 16rem; }
+table.tracker td[data-label="Posted"] { white-space: nowrap; }
+table.tracker a { color: var(--ink); text-decoration-color: var(--red); text-underline-offset: 3px; }
+table.tracker a:hover { color: var(--red); }
+table.tracker .what { display: block; color: var(--muted); font-size: 14px; margin-top: 4px; }
+.tracker-notes { max-width: 46rem; padding-left: 1.2rem; margin: 0 0 28px; }
+.tracker-notes li { margin: 0 0 10px; }
+.tracker-list .how { max-width: 46rem; color: var(--muted); font-size: 15px; border-left: 3px solid var(--red); padding: 4px 0 4px 14px; }
+.tracker-list .how strong { color: var(--ink); }
+.tracker-cta { align-items: center; gap: 16px; flex-wrap: wrap; padding: 40px 0 56px; }
+.tracker-cta p { margin: 0; font-size: 18px; }
+@media (max-width: 760px) {
+  .table-scroll { border: none; background: transparent; }
+  table.tracker, table.tracker tbody, table.tracker tr, table.tracker td { display: block; width: 100%; box-sizing: border-box; }
+  table.tracker thead { display: none; }
+  table.tracker tr { background: var(--bg-2); border: 1px solid var(--line); border-top: 2px solid var(--red); margin: 0 0 14px; }
+  table.tracker td { border-bottom: 1px solid var(--line); padding: 10px 14px; min-width: 0 !important; }
+  table.tracker td::before {
+    content: attr(data-label); display: block; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+  }
+  table.tracker td:first-child::before { display: none; }
+}
