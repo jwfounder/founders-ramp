@@ -31,6 +31,10 @@ export default {
       url.pathname = "/";
       return Response.redirect(url.toString(), 301);
     }
+    // Never serve one-off ship helper payloads (base64 chunks left from GHA ships).
+    if (path === "/.ship-payload" || path.startsWith("/.ship-payload/")) {
+      return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
+    }
     if (
       path === "/api/hit" ||
       path.startsWith("/api/hit/") ||
