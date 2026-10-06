@@ -26,7 +26,7 @@ body.page-home .ref-wide .ref-slide {
 body.page-home .ref-wide .ref-slide.on { visibility: visible; }
 body.page-home .ref-wide .ref-slide p { margin: 0 0 6px; }
 
-/* Pop: wins scoreboard tiles — cream / pale coral / white alternating fills */
+/* Pop: wins scoreboard — cream / pale coral / white fills; red/coral TOP bar; result-first */
 body.page-home .wins-scoreboard {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -35,36 +35,33 @@ body.page-home .wins-scoreboard {
 }
 body.page-home .wins-scoreboard .win.tile {
   border: 1px solid rgba(0,0,0,.12);
-  border-top: 0;
-  border-radius: 0 0 6px 6px;
-  padding: 14px 14px 12px;
+  border-radius: 6px;
+  padding: 16px 14px 14px;
   background: #fff;
-  border-left: 5px solid var(--tile);
+  border-top: 5px solid #e10600;
   box-shadow: 0 2px 0 rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.06);
 }
 body.page-home .wins-scoreboard .win.tile:nth-child(3n+1) { background: #FBF5E6; }
-body.page-home .wins-scoreboard .win.tile:nth-child(3n+2) { background: #F8D9D0; }
+body.page-home .wins-scoreboard .win.tile:nth-child(3n+2) { background: #F8D9D0; border-top-color: #e85a4f; }
 body.page-home .wins-scoreboard .win.tile:nth-child(3n+3) { background: #fff; }
+/* Result/outcome leads */
 body.page-home .wins-scoreboard .win.tile strong {
   display: block;
-  font-size: 20px;
+  font-size: 18px;
   font-family: "Barlow Condensed", sans-serif;
-  line-height: 1.1;
-  margin-bottom: 6px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  color: var(--ink);
 }
+/* Company secondary */
 body.page-home .wins-scoreboard .win.tile span {
+  display: block;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.35;
+  font-weight: 600;
 }
-body.page-home .wins-scoreboard .t1 { --tile: #e10600; }
-body.page-home .wins-scoreboard .t2 { --tile: #0b6e4f; }
-body.page-home .wins-scoreboard .t3 { --tile: #1d4ed8; }
-body.page-home .wins-scoreboard .t4 { --tile: #b45309; }
-body.page-home .wins-scoreboard .t5 { --tile: #7c3aed; }
-body.page-home .wins-scoreboard .t6 { --tile: #0e7490; }
-body.page-home .wins-scoreboard .t7 { --tile: #be123c; }
-body.page-home .wins-scoreboard .t8 { --tile: #365314; }
 
 body.page-home .btn.btn-lg {
   font-size: 18px;
