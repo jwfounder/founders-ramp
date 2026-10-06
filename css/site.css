@@ -1,1 +1,4 @@
-$file:/workspace/founders-ramp/css/site.css
+@import url("design-pass.css");
+@import url("site-0.css");
+@import url("site-1.css");
+@import url("site-2.css");

@@ -1,0 +1,58 @@
+article.essay { padding: 48px 0 80px; }
+article.essay .body { max-width: 42rem; }
+article.essay .body p { margin: 0 0 16px; }
+article.essay .body h2 { font-size: 26px; margin: 28px 0 10px; }
+article.essay .body ul { margin: 0 0 20px; padding-left: 1.2rem; }
+article.essay .body li { margin: 0 0 10px; }
+
+.summary {
+  max-width: 42rem;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--red);
+  padding: 16px 18px 14px;
+  margin: 0 0 28px;
+}
+.summary .meta { margin: 0 0 8px; }
+.summary p { margin: 0; color: var(--ink); font-size: 16px; line-height: 1.45; }
+
+footer {
+  padding: 28px 0 40px; color: var(--muted); font-size: 13px;
+}
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+@media (max-width: 860px) {
+  .hero-split, .quotes, .wins, .cards, .topic-row, .two, .results, .books, .pillars, .principles,
+  .diagram .d-grid, .diagram .d-flow, .diagram .d-three { grid-template-columns: 1fr; }
+  .topic-row { grid-template-rows: none; }
+  .card.topic {
+    display: flex;
+    grid-row: auto;
+  }
+  .diagram .d-row { grid-template-columns: 1fr; }
+  .diagram .d-col, .diagram .d-step, .diagram .d-box {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .chrome-inner {
+    flex-wrap: wrap;
+    min-height: 0;
+    gap: 8px 16px;
+    padding: 8px 0 10px;
+  }
+  .brand img { height: 44px; }
+  nav {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    justify-content: start;
+    column-gap: 16px;
+    row-gap: 8px;
+    width: 100%;
+    max-width: none;
+    flex: 1 1 100%;
+  }
+  nav a { font-size: 13px; letter-spacing: .04em; }
+  .brand span { display: none; }
+  .stage { max-width: 100%; padding: 0; }
+  .stage img { width: 100%; max-width: 100%; height: auto; }
+}
