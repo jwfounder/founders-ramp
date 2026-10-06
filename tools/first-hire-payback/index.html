@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>First sales hire payback calculator · Founders Ramp</title>
+  <meta name="description" content="See the month your first sales hire pays back what they cost, on gross profit signed and on cash collected. Counts ramp, sales cycle, and churn.">
+  <link rel="canonical" href="https://www.foundersramp.net/tools/first-hire-payback/">
+  <meta property="og:title" content="First sales hire payback calculator · Founders Ramp">
+  <meta property="og:description" content="See the month your first sales hire pays back what they cost, on gross profit signed and on cash collected.">
+  <meta property="og:url" content="https://www.foundersramp.net/tools/first-hire-payback/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Founders Ramp">
+  <meta property="og:image" content="https://www.foundersramp.net/assets/logo.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://www.foundersramp.net/#org", "name": "Founders Ramp", "url": "https://www.foundersramp.net/", "logo": {"@type": "ImageObject", "url": "https://www.foundersramp.net/assets/logo.jpg"}}, {"@type": "WebApplication", "name": "First sales hire payback calculator", "url": "https://www.foundersramp.net/tools/first-hire-payback/", "applicationCategory": "BusinessApplication", "operatingSystem": "Any", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "publisher": {"@id": "https://www.foundersramp.net/#org"}}]}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap">
+  <link rel="stylesheet" href="/css/site.css?v=os31">
+  <style>
+    .payback .wide { max-width: 64rem; }
+    .payback .calc { margin: 0 0 28px; }
+    .payback fieldset { border: 0; padding: 0; margin: 0 0 8px; min-width: 0; }
+    .payback legend { font-family: "Barlow Condensed", sans-serif; font-size: 22px; font-weight: 700; letter-spacing: .02em; padding: 0; margin: 0 0 2px; }
+    .payback .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 18px; }
+    .payback .hint { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .payback .err { display: block; font-size: 13px; color: var(--red-2); font-weight: 600; margin-top: 4px; }
+    .payback .err:empty { display: none; }
+    .payback input[aria-invalid="true"] { border-color: var(--red); outline: 1px solid var(--red); }
+    .payback input[type="text"] { width: 100%; background: var(--bg-2); color: var(--ink); border: 1px solid var(--line); padding: 10px 12px; font-size: 18px; font-family: inherit; }
+    .payback input[type="number"] { font-family: inherit; }
+    .payback select { width: 100%; background: var(--bg-2); color: var(--ink); border: 1px solid var(--line); padding: 10px 12px; font-size: 16px; font-family: inherit; }
+    .payback .presets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 6px; }
+    .payback .presets .lead { font-size: 13px; color: var(--muted); margin-right: 2px; }
+    .payback .chip { font: inherit; font-size: 14px; background: var(--bg-2); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+    .payback .chip[aria-pressed="true"] { border-color: var(--red); background: rgba(225,6,0,.06); color: var(--red-2); font-weight: 600; }
+    .payback .linkish { font: inherit; font-size: 13px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 6px 4px; }
+    .payback .preset-note { font-size: 13px; color: var(--muted); margin: 0 0 18px; max-width: 46rem; }
+    .payback .preset-note a { color: var(--muted); }
+    .payback details.finetune { margin: 10px 0 0; border-top: 1px solid var(--line); padding-top: 12px; }
+    .payback details.finetune > summary { cursor: pointer; font-weight: 600; }
+    .payback details.finetune > summary span { font-weight: 400; color: var(--muted); font-size: 14px; }
+    .payback details.finetune[open] > summary { margin-bottom: 8px; }
+    .payback .hero-result { margin: 0 0 24px; }
+    .payback .verdict { color: var(--red); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; margin: 0 0 8px; min-height: 1em; }
+    .payback .headline { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: clamp(30px, 5vw, 44px); line-height: 1.02; margin: 0 0 16px; max-width: 46rem; }
+    .payback .results.three { grid-template-columns: repeat(3, 1fr); margin-top: 0; }
+    .payback .result span { display: block; font-size: 13px; color: var(--muted); }
+    .payback .say { font-size: 17px; margin: 18px 0 0; max-width: 46rem; }
+    .payback .say p { margin: 0 0 10px; }
+    .payback .flag { color: var(--muted); font-size: 15px; border-left: 3px solid var(--line); padding-left: 12px; }
+    .payback .warn { color: var(--red-2); font-weight: 600; }
+    .payback .solves { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--red); padding: 14px 18px 6px; margin: 16px 0 0; max-width: 46rem; }
+    .payback .solves h3 { margin: 0 0 8px; font-size: 17px; }
+    .payback .solves ul { margin: 0 0 8px; padding-left: 1.1rem; }
+    .payback .solves li { margin: 0 0 6px; }
+    .payback .solves .no { color: var(--muted); }
+    .payback .share-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 16px 0 0; }
+    .payback .btn-line { font: inherit; font-size: 15px; font-weight: 600; background: var(--bg-2); color: var(--ink); border: 1px solid var(--ink); padding: 9px 14px; cursor: pointer; }
+    .payback .copy-status { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+    .payback .privacy { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+    .payback .chart-box { background: var(--bg-2); border: 1px solid var(--line); padding: 16px 16px 8px; margin: 0 0 28px; }
+    .payback .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+    .payback .legend i { display: inline-block; width: 22px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 6px; }
+    .payback .legend .k-cost { border-color: var(--ink); }
+    .payback .legend .k-signed { border-color: var(--red); }
+    .payback .legend .k-cash { border-color: var(--red); border-top-style: dashed; }
+    .payback .legend .k-valley { width: 14px; height: 12px; border: 0; background: rgba(225,6,0,.14); }
+    .payback svg { width: 100%; height: auto; display: block; }
+    .payback svg text { font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 12px; fill: var(--muted); }
+    .payback svg .mark { font-size: 12px; font-weight: 600; fill: var(--ink); paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+    .payback svg .valley { font-size: 13px; font-weight: 600; fill: var(--red-2); paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+    .payback .levers { margin: 0 0 28px; }
+    .payback .levers h2 { font-size: 30px; margin: 0 0 4px; }
+    .payback .levers .sub { margin: 0 0 14px; font-size: 15px; }
+    .payback .lever { display: grid; grid-template-columns: 15rem 1fr 9rem; gap: 12px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+    .payback .lever .track { background: var(--line); height: 12px; }
+    .payback .lever .bar { background: var(--red); height: 12px; display: block; }
+    .payback .lever .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+    .payback .result b.soft { font-family: inherit; font-size: 16px; font-weight: 600; color: var(--muted); padding-top: 8px; }
+    .payback .lever .val b { color: var(--ink); }
+    .payback details.table { margin: 0 0 28px; }
+    .payback summary.toggle { cursor: pointer; font-weight: 600; margin: 0 0 12px; }
+    .payback .table-wrap { overflow-x: auto; max-height: 28rem; overflow-y: auto; border: 1px solid var(--line); background: var(--bg-2); }
+    .payback table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .payback caption { text-align: left; font-size: 13px; color: var(--muted); padding: 8px 10px; }
+    .payback th, .payback td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    .payback th { position: sticky; top: 0; background: var(--bg-2); color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .payback th:first-child, .payback td:first-child { text-align: left; }
+    .payback tr.hit td { background: rgba(225,6,0,.06); }
+    .payback .wrong p { margin: 0 0 10px; }
+    .cta-block { margin: 8px 0 24px; }
+    .cta-block .cta-sub { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+    .sticky-bar { display: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 860px) {
+      .payback .grid { grid-template-columns: 1fr 1fr; }
+      .payback .lever { grid-template-columns: 11rem 1fr 7.5rem; }
+    }
+    @media (max-width: 720px) {
+      .sticky-bar { display: flex; justify-content: space-between; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--chrome); color: var(--chrome-ink); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); font-size: 14px; border-top: 2px solid var(--red); transition: transform .2s ease; }
+      .sticky-bar b { font-weight: 600; color: #fff; }
+      .sticky-bar span { white-space: nowrap; }
+      .sticky-bar.away { transform: translateY(110%); }
+      body.page-essay { padding-bottom: 52px; }
+    }
+    @media (max-width: 520px) {
+      .payback .grid, .payback .results.three { grid-template-columns: 1fr; }
+      .payback .chart-box { padding: 12px 8px 6px; }
+      .payback .lever { grid-template-columns: 1fr auto; gap: 4px 10px; }
+      .payback .lever .name { grid-column: 1 / -1; }
+      .payback .levers h2 { font-size: 26px; }
+    }
+  </style>
+</head>
+
+<body class="page-essay">
+  <header class="chrome">
+    <div class="wrap chrome-inner">
+      <a class="brand" href="/">
+        <img src="/assets/logo-header.jpg" alt="Founders Ramp">
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/approach/">Approach</a>
+        <a href="/writings/">Blog</a>
+        <a href="/approach/books/">Books we love</a>
+        <a href="/briefing/">Newsroom</a>
+        <a href="/services/">Services</a>
+        <a href="/about/">About Us</a>
+      </nav>
+    </div>
+  </header>
+  <article class="essay payback">
+    <div class="wrap">
+      <a class="back" href="/answers/when-to-hire-your-first-ae/">When to hire your first AE</a>
+      <p class="kicker">Tools · First hire</p>
+      <h1>When does your first sales hire pay for itself?</h1>
+      <aside class="summary">
+        <p class="meta">How it works</p>
+        <p>Put in what the hire costs, how long they take to get up to speed, how long your deals take to close, and what a won deal is worth. You'll see the month the hire has brought in more than they've cost you, two ways: on gross profit from contracts signed, and on cash in the bank.</p>
+      </aside>
+
+      <form class="calc wide" id="calc" autocomplete="off" novalidate onsubmit="return false">
+        <div class="presets" role="group" aria-labelledby="presets-lead">
+          <span class="lead" id="presets-lead">Start from:</span>
+          <button type="button" class="chip" data-preset="seed" aria-pressed="false">Seed, SMB deals</button>
+          <button type="button" class="chip" data-preset="mid" aria-pressed="false">Mid-market</button>
+          <button type="button" class="chip" data-preset="services" aria-pressed="false">Services-heavy</button>
+          <button type="button" class="chip" data-preset="bridge" aria-pressed="false">Typical AE (Bridge Group 2026)</button>
+          <button type="button" class="linkish" id="reset">Reset</button>
+        </div>
+        <p class="preset-note" id="preset-note">The first three are example starting points, not benchmarks. Change anything to match your business.</p>
+
+        <fieldset>
+          <legend>The basics</legend>
+          <div class="grid">
+            <div>
+              <label for="pay">Total pay at target, per year ($)</label>
+              <input type="text" id="pay" inputmode="decimal" value="220,000" aria-describedby="pay-hint pay-err">
+              <span class="hint" id="pay-hint">Base plus commission at target.</span>
+              <span class="err" id="pay-err"></span>
+            </div>
+            <div>
+              <label for="ramp">Months until they're fully up to speed</label>
+              <input type="number" id="ramp" min="0" max="60" step="any" inputmode="decimal" value="5" aria-describedby="ramp-err">
+              <span class="err" id="ramp-err"></span>
+            </div>
+            <div>
+              <label for="cycle">Sales cycle, months from first meeting to signed</label>
+              <input type="number" id="cycle" min="0" max="60" step="any" inputmode="decimal" value="3" aria-describedby="cycle-err">
+              <span class="err" id="cycle-err"></span>
+            </div>
+            <div>
+              <label for="acv">Average deal size, per year ($)</label>
+              <input type="text" id="acv" inputmode="decimal" value="30,000" aria-describedby="acv-err">
+              <span class="err" id="acv-err"></span>
+            </div>
+            <div>
+              <label for="mode">How should we estimate their sales?</label>
+              <select id="mode">
+                <option value="opps" selected>Deals they can work each month</option>
+                <option value="quota">Their quota</option>
+              </select>
+            </div>
+            <div id="opps-wrap">
+              <label for="opps">Live deals they can work each month</label>
+              <input type="number" id="opps" min="0" max="1000" step="any" inputmode="decimal" value="8" aria-describedby="opps-hint opps-err">
+              <span class="hint" id="opps-hint"></span>
+              <span class="err" id="opps-err"></span>
+            </div>
+            <div id="quota-wrap" hidden>
+              <label for="quota">Their annual quota ($ of new contracts)</label>
+              <input type="text" id="quota" inputmode="decimal" value="600,000" aria-describedby="quota-hint quota-err">
+              <span class="hint" id="quota-hint"></span>
+              <span class="err" id="quota-err"></span>
+            </div>
+          </div>
+        </fieldset>
+
+        <details class="finetune" id="finetune">
+          <summary>Fine-tune <span>taxes, hiring fee, tools, win rate, renewals, billing, runway</span></summary>
+          <fieldset>
+            <legend>What the hire costs</legend>
+            <div class="grid">
+              <div>
+                <label for="load">Benefits and payroll taxes (% added to pay, often 15-25%)</label>
+                <input type="number" id="load" min="0" max="100" step="any" inputmode="decimal" value="20" aria-describedby="load-err">
+                <span class="err" id="load-err"></span>
+              </div>
+              <div>
+                <label for="fee">Recruiter or hiring fee, one time ($)</label>
+                <input type="text" id="fee" inputmode="decimal" value="25,000" aria-describedby="fee-hint fee-err">
+                <span class="hint" id="fee-hint">Recruiter fee, laptop, travel to onboard. Use 0 if none.</span>
+                <span class="err" id="fee-err"></span>
+              </div>
+              <div>
+                <label for="tools">Tools and software, per month ($)</label>
+                <input type="text" id="tools" inputmode="decimal" value="500" aria-describedby="tools-hint tools-err">
+                <span class="hint" id="tools-hint">CRM seat, data, phone, and similar.</span>
+                <span class="err" id="tools-err"></span>
+              </div>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>How they sell</legend>
+            <div class="grid">
+              <div>
+                <label for="win">Win rate (% of live deals you win)</label>
+                <input type="number" id="win" min="0" max="100" step="any" inputmode="decimal" value="20" aria-describedby="win-err">
+                <span class="err" id="win-err"></span>
+              </div>
+              <div>
+                <label for="attain">Share of that they actually hit (%)</label>
+                <input type="number" id="attain" min="0" max="100" step="any" inputmode="decimal" value="70" aria-describedby="attain-hint attain-err">
+                <span class="hint" id="attain-hint">Few reps hit full capacity every month. Plan below 100%.</span>
+                <span class="err" id="attain-err"></span>
+              </div>
+              <div>
+                <label for="pipeline">Live deals you hand over on day one (total $ value)</label>
+                <input type="text" id="pipeline" inputmode="decimal" value="0" aria-describedby="pipeline-hint pipeline-err">
+                <span class="hint" id="pipeline-hint">Only deals already in talks. A contact list doesn't count.</span>
+                <span class="err" id="pipeline-err"></span>
+              </div>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Cash and renewals</legend>
+            <div class="grid">
+              <div>
+                <label for="billing">How customers pay</label>
+                <select id="billing">
+                  <option value="monthly" selected>Billed monthly</option>
+                  <option value="annual">Billed a year up front</option>
+                </select>
+              </div>
+              <div>
+                <label for="margin">Gross margin (%)</label>
+                <input type="number" id="margin" min="0" max="100" step="any" inputmode="decimal" value="80" aria-describedby="margin-hint margin-err">
+                <span class="hint" id="margin-hint">What's left of each dollar after hosting and support.</span>
+                <span class="err" id="margin-err"></span>
+              </div>
+              <div>
+                <label for="churn">Customers lost each year (%)</label>
+                <input type="number" id="churn" min="0" max="100" step="any" inputmode="decimal" value="12" aria-describedby="churn-hint churn-err">
+                <span class="hint" id="churn-hint">Share of customers who don't renew at the one-year mark.</span>
+                <span class="err" id="churn-err"></span>
+              </div>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Runway (optional)</legend>
+            <div class="grid">
+              <div>
+                <label for="cash">Cash in the bank today ($)</label>
+                <input type="text" id="cash" inputmode="decimal" value="" placeholder="Optional" aria-describedby="cash-err">
+                <span class="err" id="cash-err"></span>
+              </div>
+              <div>
+                <label for="burn">Monthly burn before this hire ($)</label>
+                <input type="text" id="burn" inputmode="decimal" value="" placeholder="Optional" aria-describedby="burn-hint burn-err">
+                <span class="hint" id="burn-hint">Net cash going out each month today.</span>
+                <span class="err" id="burn-err"></span>
+              </div>
+            </div>
+          </fieldset>
+        </details>
+      </form>
+
+      <div class="wide hero-result" id="hero">
+        <p class="verdict" id="verdict"></p>
+        <p class="headline" id="headline">&nbsp;</p>
+        <div class="results three">
+          <div class="result"><span>First signed deal, expected</span><b id="r-first">&nbsp;</b></div>
+          <div class="result"><span>The valley (biggest cash hole)</span><b id="r-gap">&nbsp;</b></div>
+          <div class="result"><span>Runway the valley uses</span><b id="r-runway">&nbsp;</b></div>
+        </div>
+        <div class="say" id="say"></div>
+        <div class="solves" id="solves" hidden></div>
+        <div class="share-row">
+          <button type="button" class="btn-line" id="copy">Copy link to my numbers</button>
+          <span class="copy-status" id="copy-status" role="status"></span>
+        </div>
+        <p class="privacy">What you type stays in your browser. No email needed. The copied link carries your numbers, so share it only with people you'd show them to.</p>
+        <p class="sr-only" id="live" aria-live="polite" aria-atomic="true"></p>
+      </div>
+
+      <div class="chart-box wide">
+        <div class="legend" aria-hidden="true">
+          <span><i class="k-cost"></i>What the hire has cost, to date</span>
+          <span><i class="k-signed"></i>Gross profit signed, to date</span>
+          <span><i class="k-cash"></i>Cash collected after gross margin, to date</span>
+          <span><i class="k-valley"></i>The valley: cash you're out</span>
+        </div>
+        <svg id="chart" viewBox="0 0 760 340" role="img" aria-label="Chart of what the hire has cost against gross profit signed and cash collected, by month"></svg>
+      </div>
+
+      <section class="levers wide" aria-labelledby="levers-h">
+        <h2 id="levers-h">What moves your payback most</h2>
+        <p class="sub">Months saved on cash payback. Each bar changes one thing and keeps everything else as you set it.</p>
+        <div id="lever-list"></div>
+      </section>
+
+      <div class="body wrong">
+        <h2>What founders get wrong</h2>
+        <p><strong>They count the ramp or the sales cycle, but not both.</strong> The two add up, so first signatures come later than either one suggests.</p>
+        <p><strong>They hire before anyone else can repeat the pitch.</strong> The rep learns the product, the buyer, and the pitch at once, and ramp stretches.</p>
+        <p><strong>They hand over names instead of live deals.</strong> With nothing already in talks, the rep waits a full sales cycle for a first signature.</p>
+        <p>For timing, read <a href="/answers/when-to-hire-your-first-ae/">when to hire your first AE</a>.</p>
+      </div>
+
+      <details class="wide table">
+        <summary class="toggle">See the month-by-month numbers</summary>
+        <div class="table-wrap">
+          <table>
+            <caption>Month-by-month numbers for the inputs above. Dollar amounts are to date unless marked this month.</caption>
+            <thead><tr><th scope="col">Month</th><th scope="col">Output</th><th scope="col">New contracts this month</th><th scope="col">Cost to date</th><th scope="col">Gross profit signed to date</th><th scope="col">Cash to date</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </details>
+
+      <div class="body">
+        <h2>The assumptions</h2>
+        <ul>
+          <li><strong>Cost</strong> is total pay at target, plus benefits and taxes, plus tools, every month from day one. Commission is counted in full even while they ramp, which is the cautious view, so the split between base and commission doesn't change the answer. The recruiter or hiring fee lands in month one.</li>
+          <li><strong>Ramp</strong>: month one is onboarding, with no new deals started. From month two, output rises in a straight line and reaches full speed once the ramp months have passed.</li>
+          <li><strong>Full output</strong> is live deals per month times win rate times deal size, or your quota divided by twelve. Either way, it's then multiplied by the share they actually hit.</li>
+          <li><strong>Sales cycle</strong>: deals they start in a month sign that many months later.</li>
+          <li><strong>Deals you hand over</strong> are treated as pipeline that closes at your win rate, spread evenly across the first sales cycle. They count toward payback because the hire closes them, but they don't speed up the hire's own ramp. If you'd close them yourself anyway, leave this at zero.</li>
+          <li><strong>Gross profit signed</strong> counts each contract year's value times gross margin, on the day it's signed or renewed. <strong>Cash collected</strong> counts the same dollars when they arrive. Billed monthly starts the month after signing. Billed up front arrives on signing and at each renewal.</li>
+          <li><strong>Renewals</strong>: each year, the share of customers you set as lost doesn't renew. The rest renew at the same price. Both lines use the same renewals, so cash never runs ahead of gross profit signed.</li>
+          <li><strong>Runway</strong>, if you add it, starts from your cash today, takes off your current monthly burn, and adds the hire's net effect month by month. The valley's share of runway is the valley divided by your current burn.</li>
+          <li><strong>Suggestions and levers</strong> each change one input and rerun the same math. Nothing else moves.</li>
+          <li><strong>Presets</strong>: Seed, Mid-market, and Services-heavy are example starting points, not benchmarks. The Typical AE preset uses only these numbers from The Bridge Group: 6.2-month ramp, $200K pay at target, and an $875K median SaaS quota (<a href="https://www.bridgegroupinc.com/research/2026-ae-models-motions-metrics">2026 report</a>), with a 53:47 base to variable split (<a href="https://blog.bridgegroupinc.com/2024-ae-metrics-compensation-benchmark">2024 report</a>). The same 2026 report found 48% of AEs hit quota, so the preset leaves the share they hit to you.</li>
+          <li>Results are averages, so you'll see fractions of deals. The first signed deal is the month the expected count reaches one whole deal. Treat all of it as a planning sketch, not a forecast.</li>
+          <li>It doesn't count the founder's time spent coaching the hire, which is real and worth planning for.</li>
+        </ul>
+      </div>
+    </div>
+  </article>
+  <div class="wrap">
+    <div class="cta-block">
+      <div class="cta-row">
+        <a class="btn" id="cta" href="https://cal.com/justin-weller-nsrjlg/30min">Check my numbers with Justin</a>
+      </div>
+      <p class="cta-sub">30 minutes, free, no pitch deck needed.</p>
+    </div>
+  </div>
+  <footer>
+    <div class="wrap">
+      <div>Founders Ramp LLC · www.foundersramp.net</div>
+      <div><a href="mailto:jw@foundersramp.net">jw@foundersramp.net</a> · <a href="/faq/">FAQ</a> · <a href="/tracker/">First Sales Hire Tracker</a></div>
+    </div>
+  </footer>
+  <div class="sticky-bar" id="sticky" aria-hidden="true">
+    <span>Signed <b id="s-signed">&nbsp;</b></span>
+    <span>Cash <b id="s-cash">&nbsp;</b></span>
+    <span>Valley <b id="s-gap">&nbsp;</b></span>
+  </div>
+  <script src="/js/quotes.js?v=rec3" defer></script>
+  <script>
+  /* MODEL START */
+  // Inputs are clean, non-negative numbers (percents as 0-100), plus mode and billing strings.
+  function paybackModel(i) {
+    var H = 60;
+    var pct = function (v) { return Math.min(Math.max(Number(v) || 0, 0), 100) / 100; };
+    var n = function (v) { v = Number(v); return isFinite(v) && v > 0 ? v : 0; };
+    var ote = i.pay !== undefined ? n(i.pay) : n(i.base) + n(i.commission);
+    var load = pct(i.load), fee = n(i.fee), tools = n(i.tools);
+    var ramp = n(i.ramp), cycle = Math.round(n(i.cycle));
+    var acv = n(i.acv), win = pct(i.win), attain = pct(i.attain), gm = pct(i.margin), churn = pct(i.churn);
+    var pipeline = n(i.pipeline);
+    var monthlyCost = ote * (1 + load) / 12 + tools;
+    var capacity = i.mode === "quota" ? n(i.quota) / 12 : n(i.opps) * win * acv;   // per month at 100%
+    var expected = capacity * attain;                                                 // per month at full speed
+    var r = {
+      horizon: H, ote: ote, monthlyCost: monthlyCost, annualCost: monthlyCost * 12,
+      capacity: capacity, capacityAnnual: capacity * 12, expected: expected, expectedAnnual: expected * 12,
+      impliedDeals: (win * acv) > 0 ? capacity / (win * acv) : 0,
+      quotaMultiple: ote > 0 ? capacity * 12 / ote : null,
+      costMultiple: monthlyCost > 0 ? expected * 12 / (monthlyCost * 12) : null,
+      gpPerMonthAtFull: expected * gm,
+      ready: ote > 0 && (expected > 0 || pipeline * win > 0)
+    };
+    var newARR = [], output = [], gp = [], cash = [], m, k, t;
+    for (m = 0; m <= H; m++) { newARR[m] = 0; output[m] = 0; gp[m] = 0; cash[m] = 0; }
+    for (m = 1; m <= H; m++) {
+      var p = m === 1 ? 0 : (ramp <= 0 ? 1 : Math.min((m - 1) / ramp, 1));
+      output[m] = p;
+      if (m + cycle <= H) newARR[m + cycle] += expected * p;
+    }
+    var spread = Math.max(cycle, 1);
+    for (m = 1; m <= spread && m <= H; m++) newARR[m] += pipeline * win / spread;
+    for (m = 1; m <= H; m++) {
+      if (newARR[m] <= 0) continue;
+      for (k = 0; m + 12 * k <= H; k++) {
+        var year = newARR[m] * Math.pow(1 - churn, k) * gm;
+        var start = m + 12 * k;
+        gp[start] += year;
+        if (i.billing === "annual") cash[start] += year;
+        else for (t = start + 1; t <= start + 12 && t <= H; t++) cash[t] += year / 12;
+      }
+    }
+    var cumCost = [0], cumGP = [0], cumCash = [0], cumNew = [0];
+    for (m = 1; m <= H; m++) {
+      cumCost[m] = cumCost[m - 1] + monthlyCost + (m === 1 ? fee : 0);
+      cumGP[m] = cumGP[m - 1] + gp[m];
+      cumCash[m] = cumCash[m - 1] + cash[m];
+      cumNew[m] = cumNew[m - 1] + newARR[m];
+    }
+    function payback(arr) {
+      if (!r.ready) return null;
+      var pb = null;
+      for (var j = H; j >= 1; j--) { if (arr[j] + 0.005 >= cumCost[j]) pb = j; else break; }
+      return pb;
+    }
+    var first = null;
+    if (acv > 0) for (m = 1; m <= H; m++) { if (cumNew[m] / acv >= 1 - 1e-9) { first = m; break; } }
+    var pbGP = payback(cumGP), pbCash = payback(cumCash);
+    var gap = 0, gapMonth = 0, gapEnd = pbCash || H;
+    for (m = 1; m <= gapEnd; m++) { if (cumCost[m] - cumCash[m] > gap) { gap = cumCost[m] - cumCash[m]; gapMonth = m; } }
+    r.newARR = newARR; r.output = output; r.cumCost = cumCost; r.cumGP = cumGP; r.cumCash = cumCash; r.cumNew = cumNew;
+    r.paybackSigned = pbGP; r.paybackCash = pbCash; r.firstDeal = first; r.maxCashGap = gap; r.gapMonth = gapMonth;
+    return r;
+  }
+
+  // Runway: cash today, minus current burn, plus the hire's net effect. Null when no cash is given.
+  function runwayModel(r, cash, burn) {
+    if (cash === null || cash === undefined || !(cash > 0)) return null;
+    var B = burn > 0 ? burn : 0, out = null;
+    for (var m = 1; m <= r.horizon; m++) {
+      if (cash - B * m - (r.cumCost[m] - r.cumCash[m]) < 0) { out = m; break; }
+    }
+    return {
+      cash: cash, burn: B,
+      withoutHire: B > 0 ? cash / B : null,
+      runsOutWithHire: out,
+      monthsUsed: B > 0 ? r.maxCashGap / B : null,
+      valleyOverCash: r.maxCashGap > cash,
+      danger: out !== null && out <= (r.paybackCash || r.horizon),
+      thin: out !== null && out - r.gapMonth < 12
+    };
+  }
+
+  function verdictFor(r, rw) {
+    if (!r.ready) return "";
+    if (rw && rw.danger) return "Not enough runway for this hire as planned.";
+    if (r.paybackSigned === null && r.paybackCash === null) return "This hire doesn't pay back at these numbers.";
+    if (r.paybackCash === null) return "Pays back on paper only. The cash doesn't come back in five years.";
+    var thin = rw && rw.thin;
+    if (r.paybackCash <= 12) return thin ? "Healthy hire, thin runway." : "Healthy hire. Cash comes back within a year.";
+    if (r.paybackCash <= 18) return thin ? "Healthy hire, thin runway." : "Solid hire. Cash comes back within 18 months.";
+    if (r.paybackCash <= 24) return thin ? "Slow payback, thin runway." : "Workable hire, but your cash is tied up for most of two years.";
+    return thin ? "Slow payback, thin runway." : "This hire likely won't pay back before your next raise.";
+  }
+
+  function withChange(inputs, key, v) { var o = {}; for (var x in inputs) o[x] = inputs[x]; o[key] = v; return o; }
+
+  // Smallest value of one input (between lo and hi) that gets cash payback to target or sooner.
+  function solveFor(inputs, key, lo, hi, target, roundUp) {
+    var at = function (v) { return paybackModel(withChange(inputs, key, v)).paybackCash; };
+    var ok = function (pb) { return pb !== null && pb <= target; };
+    var top = at(hi);
+    if (!ok(top)) return { ok: false, best: top, hi: hi };
+    if (ok(at(lo))) return { ok: true, value: lo, already: true, payback: at(lo) };
+    var a = lo, b = hi;
+    for (var it = 0; it < 50; it++) { var mid = (a + b) / 2; if (ok(at(mid))) b = mid; else a = mid; }
+    var v = roundUp ? roundUp(b) : b;
+    if (v > hi) v = hi;
+    if (!ok(at(v))) v = b;
+    return { ok: true, value: v, payback: at(v) };
+  }
+
+  // One-step changes, sorted by months saved on cash payback.
+  function leverList(inputs, base) {
+    var L = [];
+    var add = function (label, key, v) { L.push({ label: label, payback: paybackModel(withChange(inputs, key, v)).paybackCash }); };
+    if (inputs.billing !== "annual") add("Bill a year up front", "billing", "annual");
+    if (inputs.mode === "quota") add("Quota 10% higher", "quota", inputs.quota * 1.1);
+    else {
+      if (inputs.win <= 95) add("Win rate up 5 points", "win", inputs.win + 5);
+      add("Deals 20% bigger", "acv", inputs.acv * 1.2);
+      add("One more live deal a month", "opps", inputs.opps + 1);
+    }
+    if (inputs.ramp >= 1) add("Ramp one month faster", "ramp", inputs.ramp - 1);
+    if (inputs.cycle >= 1) add("Sales cycle one month shorter", "cycle", inputs.cycle - 1);
+    add("Hand over $100k of live deals", "pipeline", inputs.pipeline + 100000);
+    if (inputs.attain <= 90) add("Hit 10 more points of capacity", "attain", inputs.attain + 10);
+    var H = base.horizon, b = base.paybackCash === null ? H + 1 : base.paybackCash;
+    L.forEach(function (l) { l.saved = b - (l.payback === null ? H + 1 : l.payback); });
+    L.sort(function (x, y) { return y.saved - x.saved; });
+    return L.slice(0, 6);
+  }
+  /* MODEL END */
+
+  (function () {
+    var CAP = 10000000, CASH_CAP = 1000000000;
+    var FIELDS = {
+      pay: "money", ramp: "months", cycle: "months", acv: "money", opps: "count", quota: "money",
+      load: "pct", fee: "money", tools: "money", win: "pct", attain: "pct", pipeline: "money",
+      margin: "pct", churn: "pct", cash: "money", burn: "money"
+    };
+    var SELECTS = ["mode", "billing"];
+    var OPTIONAL = { cash: true, burn: true };
+    var FINE = ["load", "fee", "tools", "win", "attain", "pipeline", "billing", "margin", "churn", "cash", "burn"];
+    var DEFAULTS = {
+      pay: 220000, ramp: 5, cycle: 3, acv: 30000, mode: "opps", opps: 8, quota: 600000,
+      load: 20, fee: 25000, tools: 500, win: 20, attain: 70, pipeline: 0,
+      billing: "monthly", margin: 80, churn: 12, cash: "", burn: ""
+    };
+    var PRESETS = {
+      seed: { set: { acv: 15000, billing: "monthly", cycle: 2, opps: 12, mode: "opps", ramp: 4 },
+              note: "Example starting point, not a benchmark: $15k deals billed monthly, a two-month cycle, and 12 live deals a month. Change anything to match your business." },
+      mid: { set: { acv: 50000, billing: "annual", cycle: 5, opps: 5, mode: "opps", ramp: 6 },
+             note: "Example starting point, not a benchmark: $50k deals billed a year up front, a five-month cycle, and 5 live deals a month. Change anything to match your business." },
+      services: { set: { acv: 60000, billing: "monthly", cycle: 4, opps: 5, mode: "opps", margin: 45 },
+                  note: "Example starting point, not a benchmark: $60k deals with a lot of delivery work, so a 45% gross margin, billed monthly. Change anything to match your business." },
+      bridge: { set: { ramp: 6.2, pay: 200000, mode: "quota", quota: 875000 },
+                note: "From The Bridge Group: 6.2-month ramp, $200K pay at target, and an $875K median SaaS quota (<a href=\"https://www.bridgegroupinc.com/research/2026-ae-models-motions-metrics\">2026 AE report</a>). Pay splits about 53:47 base to variable (<a href=\"https://blog.bridgegroupinc.com/2024-ae-metrics-compensation-benchmark\">2024 report</a>). Only 48% of AEs hit quota in 2026, so set the share they hit for your team. Everything else stays as you had it." }
+    };
+    var DEFAULT_NOTE = "The first three are example starting points, not benchmarks. Change anything to match your business.";
+    var el = function (id) { return document.getElementById(id); };
+    var liveTimer = null, lastResult = null, lastOk = false;
+
+    function money(v) {
+      var a = Math.abs(v), s;
+      if (a >= 1e6) s = "$" + (a / 1e6).toFixed(a >= 1e7 ? 1 : 2).replace(/\.?0+$/, "") + "M";
+      else if (a >= 1e4) s = "$" + Math.round(a / 1e3) + "k";
+      else if (a >= 1e3) s = "$" + (a / 1e3).toFixed(1).replace(/\.0$/, "") + "k";
+      else s = "$" + Math.round(a);
+      return (v < 0 ? "-" : "") + s;
+    }
+    function full(v) { return "$" + Math.round(v).toLocaleString("en-US"); }
+    function times(x) { return x.toFixed(1).replace(/\.0$/, ""); }
+    function months(x) { return x.toFixed(1).replace(/\.0$/, ""); }
+    function withCommas(s) {
+      var parts = String(s).split(".");
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      return parts.join(".");
+    }
+
+    // Money fields: commas as you type, caret kept in place. Anything odd is left alone and flagged.
+    function formatMoneyInput(input) {
+      var raw = input.value;
+      if (!/^[\s$\d,.\-]*$/.test(raw)) return;
+      var cleaned = raw.replace(/[^\d.\-]/g, "");
+      if ((cleaned.match(/-/g) || []).length > 1 || cleaned.indexOf("-") > 0) return;
+      if ((cleaned.match(/\./g) || []).length > 1) return;
+      var caret = input.selectionStart === null ? raw.length : input.selectionStart;
+      var keep = raw.slice(0, caret).replace(/[^\d.\-]/g, "").length;
+      var sign = cleaned.charAt(0) === "-" ? "-" : "";
+      var parts = cleaned.replace("-", "").split(".");
+      var intPart = parts[0].replace(/^0+(?=\d)/, "");
+      var out = sign + withCommas(intPart) + (parts.length > 1 ? "." + parts[1] : "");
+      if (out === raw) return;
+      input.value = out;
+      var pos = 0, seen = 0;
+      while (pos < out.length && seen < keep) { if (/[\d.\-]/.test(out.charAt(pos))) seen++; pos++; }
+      try { input.setSelectionRange(pos, pos); } catch (e) {}
+    }
+    function setValue(id, v) {
+      var input = el(id);
+      if (FIELDS[id] === "money") input.value = (v === "" || v === null || v === undefined) ? "" : withCommas(String(v));
+      else input.value = v;
+    }
+
+    function readField(id, type) {
+      var input = el(id), raw = input.value.trim(), msg = "", v = 0, blank = false;
+      if (type === "money") raw = raw.replace(/[$,\s]/g, "");
+      if (input.validity && input.validity.badInput) msg = "Numbers only.";
+      else if (raw === "") blank = true;
+      else if (type === "money" && !/^-?(\d+\.?\d*|\.\d+)$/.test(raw)) msg = "Numbers only.";
+      else {
+        v = Number(raw);
+        if (!isFinite(v)) msg = "Numbers only.";
+        else if (v < 0) msg = "Use 0 or more.";
+        else if (id === "cash" && v > CASH_CAP) msg = "Up to $1,000,000,000.";
+        else if (type === "money" && id !== "cash" && v > CAP) msg = "Up to $10,000,000.";
+        else if (type === "months" && v > 60) msg = "Up to 60 months.";
+        else if (type === "count" && v > 1000) msg = "Up to 1,000.";
+        else if (type === "pct" && v > 100) { msg = "Counted as 100%."; v = 100; }
+      }
+      var bad = !!msg && msg !== "Counted as 100%.";
+      input.setAttribute("aria-invalid", bad ? "true" : "false");
+      el(id + "-err").textContent = msg;
+      return { value: bad ? 0 : v, bad: bad, blank: blank };
+    }
+
+    function read() {
+      var o = { mode: el("mode").value, billing: el("billing").value }, bad = false, badFine = false;
+      Object.keys(FIELDS).forEach(function (id) {
+        var hidden = (id === "opps" && o.mode === "quota") || (id === "quota" && o.mode !== "quota");
+        var f = readField(id, FIELDS[id]);
+        o[id] = OPTIONAL[id] && f.blank ? null : f.value;
+        if (f.bad && !hidden) { bad = true; if (FINE.indexOf(id) >= 0) badFine = true; }
+      });
+      o.invalid = bad; o.invalidFine = badFine;
+      return o;
+    }
+
+    function currentValues() {
+      var o = {};
+      Object.keys(FIELDS).forEach(function (id) { o[id] = el(id).value.replace(/[$,\s]/g, ""); });
+      SELECTS.forEach(function (id) { o[id] = el(id).value; });
+      return o;
+    }
+
+    function niceStep(max, count) {
+      var raw = max / count, pow = Math.pow(10, Math.floor(Math.log10(raw || 1))), q = raw / pow;
+      return (q <= 1 ? 1 : q <= 2 ? 2 : q <= 2.5 ? 2.5 : q <= 5 ? 5 : 10) * pow;
+    }
+
+    function showMonths(r) {
+      if (!r.ready) return 24;
+      var end = r.paybackCash || (r.paybackSigned ? r.paybackSigned + 24 : 57);
+      return Math.min(r.horizon, Math.max(24, end + 3));
+    }
+
+    function draw(r, ok) {
+      var svg = el("chart");
+      var W = Math.max(280, Math.round(svg.getBoundingClientRect().width || 760));
+      var narrow = W < 520;
+      var Hh = narrow ? Math.round(W * 0.95) : 340;
+      svg.setAttribute("viewBox", "0 0 " + W + " " + Hh);
+      if (!ok) { svg.innerHTML = ""; svg.setAttribute("aria-label", "Chart appears once the inputs are filled in."); return; }
+      var show = showMonths(r);
+      var L = narrow ? 50 : 62, R = 12, T = 14, B = 40;
+      var w = W - L - R, h = Hh - T - B, max = 0, m;
+      for (m = 0; m <= show; m++) max = Math.max(max, r.cumCost[m], r.cumGP[m], r.cumCash[m]);
+      if (max <= 0) max = 1;
+      var step = niceStep(max, narrow ? 4 : 5), top = Math.ceil(max / step) * step;
+      var x = function (mm) { return L + (mm / show) * w; };
+      var y = function (v) { return T + h - (v / top) * h; };
+      var out = [];
+      for (var v = 0; v <= top + 0.5; v += step) {
+        out.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#dde1e6"/>');
+        out.push('<text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + money(v) + '</text>');
+      }
+      var tick = show <= 24 ? (narrow ? 6 : 3) : show <= 36 ? 6 : 12;
+      for (m = 0; m <= show; m += tick) out.push('<text x="' + x(m) + '" y="' + (T + h + 18) + '" text-anchor="middle">' + m + '</text>');
+      out.push('<text x="' + (W - R) + '" y="' + (Hh - 4) + '" text-anchor="end">Months since the hire started</text>');
+      // The valley: the area where cost is above cash collected.
+      var upper = [], lower = [];
+      for (m = 0; m <= show; m++) {
+        upper.push(x(m).toFixed(1) + "," + y(r.cumCost[m]).toFixed(1));
+        lower.unshift(x(m).toFixed(1) + "," + y(Math.min(r.cumCash[m], r.cumCost[m])).toFixed(1));
+      }
+      out.push('<polygon points="' + upper.concat(lower).join(" ") + '" fill="#e10600" fill-opacity=".10" stroke="none"/>');
+      function line(arr, color, dash) {
+        var pts = [];
+        for (var j = 0; j <= show; j++) pts.push(x(j).toFixed(1) + "," + y(arr[j]).toFixed(1));
+        return '<polyline fill="none" stroke="' + color + '" stroke-width="2.5"' + (dash ? ' stroke-dasharray="6 5"' : '') + ' stroke-linejoin="round" points="' + pts.join(" ") + '"/>';
+      }
+      out.push(line(r.cumCost, "#161616"));
+      out.push(line(r.cumCash, "#e10600", true));
+      out.push(line(r.cumGP, "#e10600"));
+      if (r.gapMonth > 0 && r.gapMonth <= show && r.maxCashGap > 0) {
+        var gx = x(r.gapMonth), gy1 = y(r.cumCost[r.gapMonth]), gy2 = y(r.cumCash[r.gapMonth]);
+        out.push('<line x1="' + gx + '" x2="' + gx + '" y1="' + gy1 + '" y2="' + gy2 + '" stroke="#c10500" stroke-width="1.5" stroke-dasharray="3 3"/>');
+        var vlabel = "The valley: " + money(r.maxCashGap), vw = vlabel.length * 7.4;
+        var vx = gx + 8, va = "start";
+        if (vx + vw > W - R) { vx = gx - 8; va = "end"; }
+        var vy = Math.min(Math.max((gy1 + gy2) / 2 + 4, T + 14), T + h - 6);
+        out.push('<text class="valley" x="' + vx + '" y="' + vy + '" text-anchor="' + va + '">' + vlabel + '</text>');
+      }
+      function mark(mm, label, below) {
+        if (mm === null || mm > show) return;
+        var cx = x(mm), cy = y(r.cumCost[mm]);
+        out.push('<line x1="' + cx + '" x2="' + cx + '" y1="' + T + '" y2="' + (T + h) + '" stroke="#e10600" stroke-opacity=".25"/>');
+        out.push('<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="#fff" stroke="#e10600" stroke-width="2.5"/>');
+        var approx = label.length * 6.8, a2 = cx + 10 + approx > W - R ? "end" : "start";
+        var tx = a2 === "end" ? cx - 10 : cx + 10;
+        if (a2 === "end" && tx - approx < L) { a2 = "start"; tx = L + 4; }
+        var ty = below ? Math.min(cy + 22, T + h - 6) : Math.max(cy - 12, T + 12);
+        out.push('<text class="mark" x="' + tx + '" y="' + ty + '" text-anchor="' + a2 + '">' + label + '</text>');
+      }
+      if (r.paybackSigned !== null && r.paybackSigned === r.paybackCash) mark(r.paybackSigned, (narrow ? "Both: month " : "Both pass cost: month ") + r.paybackSigned, false);
+      else {
+        mark(r.paybackSigned, (narrow ? "On paper: month " : "Gross profit signed passes cost: month ") + r.paybackSigned, false);
+        mark(r.paybackCash, (narrow ? "Cash: month " : "Cash passes cost: month ") + r.paybackCash, true);
+      }
+      svg.innerHTML = out.join("");
+      var a = "Chart over " + show + " months. ";
+      a += r.paybackSigned ? "Gross profit signed passes cost in month " + r.paybackSigned + ". " : "Gross profit signed stays below cost. ";
+      a += r.paybackCash ? "Cash collected passes cost in month " + r.paybackCash + ". " : "Cash collected stays below cost. ";
+      a += "The valley is " + full(r.maxCashGap) + " in month " + r.gapMonth + ".";
+      svg.setAttribute("aria-label", a);
+    }
+
+    function headlineFor(r, i) {
+      if (i.invalid) return "Fix the highlighted fields to see your payback.";
+      if (!r.ready) return "Add pay and expected sales to see your payback.";
+      var s = r.paybackSigned, c = r.paybackCash;
+      if (s && c && c > s) return "Pays back on paper in month " + s + ". Your bank account waits until month " + c + ".";
+      if (s && c) return "Pays back on paper and in the bank in month " + c + ".";
+      if (s) return "Pays back on paper in month " + s + ". Your bank account waits past five years.";
+      return "Doesn't pay back within five years, on paper or in the bank.";
+    }
+
+    function solvesHTML(i, r) {
+      var target = (r.paybackCash === null || r.paybackCash > 18) ? 18 : (r.paybackCash > 12 ? 12 : null);
+      if (target === null) return "";
+      var items = [];
+      var ceilTo = function (step) { return function (v) { return Math.ceil(v / step - 1e-9) * step; }; };
+      var reach = function (res, yes, noLabel) {
+        if (res.ok) return "<li>" + yes(res.value) + "</li>";
+        return '<li class="no">' + noLabel + (res.best ? " Even then, cash pays back in month " + res.best + "." : " Even then, cash doesn't pay back in five years.") + "</li>";
+      };
+      if (i.billing !== "annual") {
+        var pa = paybackModel(withChange(i, "billing", "annual")).paybackCash;
+        items.push(pa !== null && pa <= target
+          ? "<li>Bill a year up front. Cash pays back in month " + pa + ".</li>"
+          : '<li class="no">Billing a year up front isn\'t enough on its own. ' + (pa ? "It gets you to month " + pa + "." : "Cash still doesn't pay back in five years.") + "</li>");
+      }
+      if (i.mode === "quota") {
+        if (i.attain < 100) items.push(reach(solveFor(i, "attain", i.attain, 100, target, ceilTo(1)),
+          function (v) { return "They hit " + Math.round(v) + "% of quota instead of " + Math.round(i.attain) + "%."; },
+          "No share of quota gets there on its own, even 100%."));
+        items.push(reach(solveFor(i, "quota", i.quota, CAP, target, ceilTo(10000)),
+          function (v) { return "A quota of " + full(v) + " instead of " + full(i.quota) + ", at the same share hit."; },
+          "No quota up to $10M gets there on its own."));
+      } else {
+        if (i.win < 100) items.push(reach(solveFor(i, "win", i.win, 100, target, ceilTo(1)),
+          function (v) { return "Win " + Math.round(v) + "% of live deals instead of " + Math.round(i.win) + "%."; },
+          "No win rate gets there on its own, even 100%."));
+        items.push(reach(solveFor(i, "acv", i.acv, CAP, target, ceilTo(1000)),
+          function (v) { return "Average deals of " + full(v) + " instead of " + full(i.acv) + "."; },
+          "No deal size up to $10M gets there on its own."));
+      }
+      items.push(reach(solveFor(i, "pipeline", i.pipeline, CAP, target, ceilTo(10000)),
+        function (v) { return "Hand over " + full(v) + " of live deals on day one" + (i.pipeline > 0 ? " instead of " + full(i.pipeline) : "") + "."; },
+        "No amount of handed-over deals up to $10M gets there on its own."));
+      if (items.length < 4 && i.mode !== "quota" && i.attain < 100) items.push(reach(solveFor(i, "attain", i.attain, 100, target, ceilTo(1)),
+        function (v) { return "They hit " + Math.round(v) + "% of capacity instead of " + Math.round(i.attain) + "%."; },
+        "No share of capacity gets there on its own, even 100%."));
+      var head = target === 18 ? "To get cash payback by month 18, change any one of these:" : "Cash already pays back within 18 months. To get it within a year, change any one of these:";
+      return "<h3>" + head + "</h3><ul>" + items.slice(0, 4).join("") + "</ul>";
+    }
+
+    function leversHTML(i, r) {
+      var list = leverList(i, r), max = 0;
+      list.forEach(function (l) { max = Math.max(max, l.saved); });
+      return list.map(function (l) {
+        var w = max > 0 ? Math.max(0, l.saved) / max * 100 : 0, val;
+        if (r.paybackCash === null && l.payback === null) val = "still not in 5 years";
+        else if (r.paybackCash === null) val = "pays back in <b>month " + l.payback + "</b>";
+        else if (l.saved > 0) val = "<b>" + l.saved + " month" + (l.saved === 1 ? "" : "s") + "</b> sooner";
+        else val = "no change";
+        return '<div class="lever"><span class="name">' + l.label + '</span><span class="track" aria-hidden="true"><span class="bar" style="width:' + w.toFixed(1) + '%"></span></span><span class="val">' + val + "</span></div>";
+      }).join("");
+    }
+
+    function liveSentence(r, i, verdict) {
+      if (i.invalid) return "Fix the highlighted fields to see your payback.";
+      if (!r.ready) return "Add pay and expected sales to see your payback.";
+      var s = verdict ? verdict + " " : "";
+      s += r.paybackSigned ? "On paper, month " + r.paybackSigned : "On paper, not in 5 years";
+      s += r.paybackCash ? "; in the bank, month " + r.paybackCash + "." : "; in the bank, not in 5 years.";
+      return s + " Valley " + full(r.maxCashGap) + ".";
+    }
+
+    function updatePresetChips() {
+      var cur = currentValues(), active = null;
+      document.querySelectorAll(".chip").forEach(function (b) {
+        var name = b.getAttribute("data-preset"), p = PRESETS[name], match = true;
+        Object.keys(p.set).forEach(function (k) { if (String(cur[k]) !== String(p.set[k])) match = false; });
+        b.setAttribute("aria-pressed", match ? "true" : "false");
+        if (match && !active) active = name;
+      });
+      el("preset-note").innerHTML = active ? PRESETS[active].note : DEFAULT_NOTE;
+    }
+
+    function render() {
+      var i = read();
+      el("opps-wrap").hidden = i.mode === "quota";
+      el("quota-wrap").hidden = i.mode !== "quota";
+      if (i.invalidFine) el("finetune").open = true;
+      var r = paybackModel(i);
+      var ok = !i.invalid && r.ready;
+      var rw = ok ? runwayModel(r, i.cash, i.burn) : null;
+      lastResult = r; lastOk = ok;
+
+      el("quota-hint").textContent = r.impliedDeals > 0 ? "About " + times(r.impliedDeals) + " live deals a month at your win rate and deal size." : "";
+      el("opps-hint").textContent = r.capacityAnnual > 0 && i.mode !== "quota" ? "If they hit all of it: " + full(r.capacityAnnual) + " of new contracts a year." : "";
+
+      var verdict = ok ? verdictFor(r, rw) : "";
+      el("verdict").textContent = verdict;
+      el("headline").textContent = headlineFor(r, i);
+      var notSet = "Not set";
+      el("r-first").textContent = ok ? (r.firstDeal ? "Month " + r.firstDeal : "Not in 5 years") : notSet;
+      el("r-gap").textContent = ok ? money(r.maxCashGap) : notSet;
+      el("r-runway").className = ok && !rw ? "soft" : "";
+      if (!ok) el("r-runway").textContent = notSet;
+      else if (!rw) el("r-runway").textContent = "Add cash in Fine-tune";
+      else if (rw.monthsUsed !== null) el("r-runway").textContent = months(rw.monthsUsed) + " months";
+      else el("r-runway").textContent = Math.round(r.maxCashGap / rw.cash * 100) + "% of cash";
+
+      var s = [];
+      if (ok) {
+        if (r.expected > 0) s.push("<p>At full speed they'd sign about " + full(r.expectedAnnual) + " a year in new contracts, about " + times(r.costMultiple) + " times what they cost you each year in pay, taxes, and tools (" + full(r.annualCost) + ").</p>");
+        var para = r.firstDeal ? "Expect the first signed deal around month " + r.firstDeal + "." : "At these numbers they don't sign a whole deal in five years.";
+        if (r.maxCashGap > 0) para += " At the low point, in month " + r.gapMonth + ", you're out " + full(r.maxCashGap) + " in cash. That's the valley.";
+        s.push("<p>" + para + "</p>");
+        if (rw) {
+          var ln = rw.withoutHire !== null ? "Without this hire, your cash lasts about " + months(rw.withoutHire) + " months. " : "";
+          ln += rw.runsOutWithHire !== null ? "With it, cash runs out around month " + rw.runsOutWithHire + "." : "With it, cash lasts past five years.";
+          if (rw.monthsUsed !== null) ln += " The valley equals about " + months(rw.monthsUsed) + " months of your current burn.";
+          s.push("<p>" + ln + "</p>");
+          if (rw.danger) s.push("<p class=\"warn\">Cash runs out in month " + rw.runsOutWithHire + ", before this hire pays back" + (r.paybackCash ? " in month " + r.paybackCash : "") + ". You'd need to raise or cut first.</p>");
+          else if (rw.valleyOverCash) s.push("<p class=\"warn\">The valley (" + full(r.maxCashGap) + ") is bigger than the cash in the bank (" + full(rw.cash) + ").</p>");
+        }
+        if (r.expected > 0 && r.gpPerMonthAtFull < r.monthlyCost) {
+          s.push("<p class=\"warn\">Even at full speed, the gross profit on new contracts each month (" + full(r.gpPerMonthAtFull) + ") is less than they cost each month (" + full(r.monthlyCost) + ")" + (r.paybackSigned ? ", so payback depends on customers renewing" : "") + ".</p>");
+        }
+        if (r.quotaMultiple !== null && r.capacity > 0 && r.quotaMultiple < 4) {
+          s.push("<p class=\"flag\">Worth a look: if they hit 100%, they'd sign " + full(r.capacityAnnual) + " a year, " + times(r.quotaMultiple) + " times their total pay of " + full(r.ote) + ". A common rule of thumb is a quota of about 4 times total pay or more. Below that, a first hire is hard to pay back.</p>");
+        }
+      }
+      el("say").innerHTML = s.join("");
+
+      var sv = ok ? solvesHTML(i, r) : "";
+      el("solves").innerHTML = sv;
+      el("solves").hidden = !sv;
+      el("lever-list").innerHTML = ok ? leversHTML(i, r) : '<p class="sub">Fill in the basics to see which changes matter most.</p>';
+
+      draw(r, ok);
+
+      var rows = [];
+      if (ok) {
+        var show = showMonths(r);
+        for (var m = 1; m <= show; m++) {
+          var hit = m === r.paybackSigned || m === r.paybackCash;
+          rows.push("<tr" + (hit ? ' class="hit"' : "") + "><td>" + m + "</td><td>" + Math.round(r.output[m] * 100) + "%</td><td>" + full(r.newARR[m]) + "</td><td>" + full(r.cumCost[m]) + "</td><td>" + full(r.cumGP[m]) + "</td><td>" + full(r.cumCash[m]) + "</td></tr>");
+        }
+      }
+      el("rows").innerHTML = rows.join("");
+
+      var cta = el("cta");
+      if (!ok || r.paybackCash === null) cta.textContent = "Get my first hire paying back faster";
+      else if (r.paybackCash > 18) cta.textContent = "Shorten my month " + r.paybackCash + " payback";
+      else cta.textContent = "Check my numbers with Justin";
+
+      el("s-signed").textContent = ok ? (r.paybackSigned ? "month " + r.paybackSigned : "5 yrs+") : "not set";
+      el("s-cash").textContent = ok ? (r.paybackCash ? "month " + r.paybackCash : "5 yrs+") : "not set";
+      el("s-gap").textContent = ok ? money(r.maxCashGap) : "not set";
+
+      updatePresetChips();
+      el("copy-status").textContent = "";
+
+      clearTimeout(liveTimer);
+      var sentence = liveSentence(r, i, verdict);
+      liveTimer = setTimeout(function () { el("live").textContent = sentence; }, 400);
+    }
+
+    // Share link: every input goes in the query string, with a version number so old links keep working.
+    // The page address itself is not rewritten as you type, so what you type stays in this tab until you copy a link.
+    var URL_VERSION = "1";
+    function shareURL() {
+      var cur = currentValues(), q = ["v=" + URL_VERSION];
+      Object.keys(DEFAULTS).forEach(function (k) {
+        if (cur[k] === "" && OPTIONAL[k]) return;
+        q.push(k + "=" + encodeURIComponent(cur[k]));
+      });
+      return location.origin + location.pathname + "?" + q.join("&");
+    }
+    function loadFromURL() {
+      var params = new URLSearchParams(location.search);
+      if (!params.get("v")) return false;
+      var touchedFine = false, any = false;
+      Object.keys(DEFAULTS).forEach(function (k) {
+        if (!params.has(k)) return;
+        var v = params.get(k);
+        if (k === "mode") { if (v !== "opps" && v !== "quota") return; el(k).value = v; }
+        else if (k === "billing") { if (v !== "monthly" && v !== "annual") return; el(k).value = v; }
+        else if (FIELDS[k] === "money" && /^\d*\.?\d*$/.test(v)) setValue(k, v);
+        else el(k).value = v;
+        any = true;
+        if (FINE.indexOf(k) >= 0 && String(v) !== String(DEFAULTS[k])) touchedFine = true;
+      });
+      // Older or hand-built links may split pay into base and commission. Add them up into total pay.
+      if (!params.has("pay") && (params.has("base") || params.has("commission"))) {
+        var bs = Number(params.get("base") || 0), cm = Number(params.get("commission") || 0);
+        if (isFinite(bs) && isFinite(cm) && bs >= 0 && cm >= 0) { setValue("pay", bs + cm); any = true; }
+      }
+      if (touchedFine) el("finetune").open = true;
+      return any;
+    }
+    function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+      return new Promise(function (resolve, reject) {
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "absolute"; ta.style.left = "-9999px";
+        document.body.appendChild(ta); ta.select();
+        var done = false; try { done = document.execCommand("copy"); } catch (e) {}
+        document.body.removeChild(ta);
+        if (done) resolve(); else reject(new Error("copy failed"));
+      });
+    }
+
+    function applyPreset(name) {
+      var p = PRESETS[name];
+      Object.keys(p.set).forEach(function (k) { setValue(k, p.set[k]); });
+      render();
+    }
+    function resetAll() {
+      Object.keys(DEFAULTS).forEach(function (k) { setValue(k, DEFAULTS[k]); });
+      render();
+    }
+
+    Object.keys(FIELDS).forEach(function (id) {
+      el(id).addEventListener("input", function (e) { if (FIELDS[id] === "money") formatMoneyInput(e.target); render(); });
+      el(id).addEventListener("change", render);
+    });
+    SELECTS.forEach(function (id) { el(id).addEventListener("change", render); });
+    document.querySelectorAll(".chip").forEach(function (b) {
+      b.addEventListener("click", function () { applyPreset(b.getAttribute("data-preset")); });
+    });
+    el("reset").addEventListener("click", resetAll);
+    el("copy").addEventListener("click", function () {
+      var url = shareURL();
+      window.__lastShareURL = url;
+      copyText(url).then(function () {
+        el("copy-status").textContent = "Link copied. Anyone who opens it sees these numbers.";
+      }, function () {
+        el("copy-status").textContent = "Couldn't copy automatically. Here's your link: " + url;
+      });
+    });
+
+    var resizeTimer = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () { if (lastResult) draw(lastResult, lastOk); }, 150);
+    });
+
+    // Sticky results bar on phones: tuck it away while the main results are on screen.
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) { el("sticky").classList.toggle("away", en.isIntersecting); });
+      }, { threshold: 0.15 });
+      io.observe(el("hero"));
+    }
+
+    if (window.matchMedia && window.matchMedia("(min-width: 861px)").matches) el("finetune").open = true;
+    loadFromURL();
+    render();
+  })();
+  </script>
+</body>
+</html>
