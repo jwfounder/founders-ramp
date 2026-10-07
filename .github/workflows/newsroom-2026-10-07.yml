@@ -1,0 +1,85 @@
+name: Newsroom 2026-10-07 assemble (one-off, removes itself)
+on:
+  push:
+    branches: [newsroom/2026-10-07]
+    paths: [".github/workflows/newsroom-2026-10-07.yml"]
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: newsroom/2026-10-07
+          fetch-depth: 0
+      - run: pip install pillow
+      - name: Add card, refresh home strip, build WebP, remove one-off
+        run: |
+          python3 <<'PY'
+          import pathlib, re
+          from PIL import Image, ImageDraw, ImageFont
+          W, H = 720, 378
+          slug = "2026-10-07-zylo-ushers-in-a-new-era-of-agentic-saas-management"
+          url = "https://www.prweb.com/releases/zylo-ushers-in-a-new-era-of-agentic-saas-management-302899526.html"
+          title = "Zylo Ushers in a New Era of Agentic SaaS Management"
+          alt = "Bright illustration card reading Zylo finds unused software licenses before renewal"
+          source = "Zylo (PRWeb)"
+          body = "Big companies can now ask Zylo, in plain English, for every unused software license before a renewal. That list can reach your buyer's boss before you hear anything, so check who stopped using your product well before renewal and call them."
+          img = f'<span class="thumb"><img src="../assets/newsroom/{slug}.webp" alt="{alt}" width="720" height="378" loading="lazy" decoding="async"></span>'
+          meta = '<span class="news-meta"><span class="news-topic">Buyers and markets</span> <time datetime="2026-10-07">2026-10-07</time></span>'
+          I = " " * 10
+          bcard = (f'{I}<a class="card news" href="{url}" target="_blank" rel="noopener" data-topic="buyers">\n'
+                   f'{I}  {img}\n{I}  <div class="news-body">\n{I}    {meta}\n{I}    <h3>{title}</h3>\n'
+                   f'{I}    <p>{body}</p>\n{I}    <span class="news-source">{source}</span>\n{I}  </div>\n{I}</a>\n')
+          hcard = (f'{I}<a class="card news" href="{url}" target="_blank" rel="noopener">\n'
+                   f'{I}  {img}\n{I}  <div class="news-body">\n{I}    {meta}\n{I}    <h3>{title}</h3>\n'
+                   f'{I}    <span class="news-source">{source}</span>\n{I}  </div>\n{I}</a>\n')
+          b = pathlib.Path("briefing/index.html"); s = b.read_text(encoding="utf-8")
+          assert url not in s
+          a = '        <div class="cards news-grid">\n'; assert s.count(a) == 1
+          s = s.replace(a, a + bcard, 1)
+          s = s.replace('aria-pressed="true">All <span>31</span>', 'aria-pressed="true">All <span>32</span>', 1)
+          s = s.replace('Buyers and markets <span>7</span>', 'Buyers and markets <span>8</span>', 1)
+          assert 'All <span>32</span>' in s and 'Buyers and markets <span>8</span>' in s
+          assert s.count('class="card news"') == 32 and s.count('data-topic="buyers"') == 8
+          b.write_text(s, encoding="utf-8")
+          h = pathlib.Path("home/index.html"); s = h.read_text(encoding="utf-8")
+          a = '        <div class="cards news-strip">\n'; assert s.count(a) == 1
+          s = s.replace(a, a + hcard, 1)
+          s, n = re.subn(r' {10}<a class="card news" href="https://fintech\.global/2026/10/02/mastercard-and-bmo-pull-payments-inside-enterprise-software/" target="_blank" rel="noopener">\n.*?</a>\n', "", s, count=1, flags=re.S)
+          assert n == 1
+          strip = s.split('cards news-strip')[1].split('<section')[0]
+          assert strip.count('class="card news"') == 3, strip.count('class="card news"')
+          h.write_text(s, encoding="utf-8")
+          im = Image.new("RGB", (W, H), (14, 165, 233))
+          d = ImageDraw.Draw(im)
+          d.rectangle([0, 0, W, 28], fill=(250, 204, 21))
+          d.rectangle([0, H - 28, W, H], fill=(236, 72, 153))
+          d.rounded_rectangle([44, 58, W - 44, H - 58], radius=20, fill=(255, 255, 255))
+          try:
+              lg = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 34)
+              sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+          except Exception:
+              lg = ImageFont.load_default(size=34); sm = ImageFont.load_default(size=20)
+          d.text((72, 86), "Unused licenses,", fill=(15, 23, 42), font=lg)
+          d.text((72, 132), "flagged before renewal", fill=(15, 23, 42), font=lg)
+          d.text((72, 196), "Zylo news, Oct 6, 2026", fill=(71, 85, 105), font=sm)
+          for i in range(14):
+              c = (249, 115, 22) if i in (3, 7, 8, 12) else (34, 197, 94)
+              x = 72 + i * 40; d.rounded_rectangle([x, 236, x + 30, 266], radius=6, fill=c)
+          d.text((72, 276), "Used seats in green, unused in orange", fill=(71, 85, 105), font=sm)
+          out = pathlib.Path(f"assets/newsroom/{slug}.webp"); out.parent.mkdir(parents=True, exist_ok=True)
+          im.save(out, "WEBP", quality=82, method=6)
+          assert 3000 < out.stat().st_size < 150000, out.stat().st_size
+          pathlib.Path(".github/workflows/newsroom-2026-10-07.yml").unlink(missing_ok=True)
+          print("ok", out.stat().st_size)
+          PY
+      - name: Commit assembled Newsroom card
+        run: |
+          git config user.name "jwfounder"
+          git config user.email "justinweller.jw@gmail.com"
+          git add -A
+          git status --short
+          git commit -m "Newsroom: Zylo finds unused licenses before renewal (2026-10-07)"
+          git push origin HEAD:newsroom/2026-10-07
