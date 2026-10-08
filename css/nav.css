@@ -67,5 +67,16 @@
   .menu-btn[aria-expanded="true"] span::after { transform: translateY(-7px) rotate(-45deg); }
   .menu-btn:focus-visible { outline: 2px solid var(--red); outline-offset: -4px; }
   .chrome-inner:has(.menu-btn) nav { display: none; }
-  .chrome-inner.menu-open nav { display: grid; padding: 4px 0 6px; }
+  .chrome-inner.menu-open nav {
+    display: grid; padding: 4px 4px 6px; margin: 0 -4px; box-sizing: border-box;
+    width: calc(100% + 8px); flex-basis: calc(100% + 8px);
+    /* Never taller than the screen below the bar (8px is the gap above the links). */
+    max-height: calc(100vh - var(--menu-h, 63px) - 8px);
+    max-height: calc(100dvh - var(--menu-h, 63px) - 8px);
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
+
+/* Jump links and headings stop clear of the pinned top menu. */
+[id], :target, h1, h2, h3, h4 { scroll-margin-top: calc(var(--menu-h, 65px) + 16px); }
