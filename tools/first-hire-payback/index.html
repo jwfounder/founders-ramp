@@ -690,31 +690,116 @@
       out.push(line(r.cumCost, "#161616"));
       out.push(line(r.cumCash, "#e10600", true));
       out.push(line(r.cumGP, "#e10600"));
-      if (r.gapMonth > 0 && r.gapMonth <= show && r.maxCashGap > 0) {
-        var gx = x(r.gapMonth), gy1 = y(r.cumCost[r.gapMonth]), gy2 = y(r.cumCash[r.gapMonth]);
+      // Labels: try a few spots near each point and keep the first one that
+      // stays inside the plot and clear of the lines, dots and other labels.
+      var series = [r.cumCost, r.cumCash, r.cumGP], boxes = [], segs = [];
+      for (var si = 0; si < series.length; si++) {
+        for (m = 0; m < show; m++) segs.push([x(m), y(series[si][m]), x(m + 1), y(series[si][m + 1]), 10]);
+      }
+      function segHitsBox(sg, b) {
+        // Liang-Barsky clip of the segment against the box.
+        var x0 = sg[0], y0 = sg[1], dx = sg[2] - x0, dy = sg[3] - y0, t0 = 0, t1 = 1;
+        var pq = [[-dx, x0 - b[0]], [dx, b[2] - x0], [-dy, y0 - b[1]], [dy, b[3] - y0]];
+        for (var k = 0; k < 4; k++) {
+          var pp = pq[k][0], qq = pq[k][1];
+          if (pp === 0) { if (qq < 0) return false; continue; }
+          var t = qq / pp;
+          if (pp < 0) { if (t > t1) return false; if (t > t0) t0 = t; }
+          else { if (t < t0) return false; if (t < t1) t1 = t; }
+        }
+        return true;
+      }
+      var ctx2d = null;
+      function textWidth(label, fs, est) {
+        try {
+          ctx2d = ctx2d || document.createElement("canvas").getContext("2d");
+          ctx2d.font = "600 " + fs + 'px "IBM Plex Sans", system-ui, sans-serif';
+          var wd = ctx2d.measureText(label).width;
+          if (wd > 0) return wd + 2;
+        } catch (e) {}
+        return label.length * est;
+      }
+      function boxFor(tx, ty, anchor, tw, fs) {
+        var x0 = anchor === "end" ? tx - tw : anchor === "middle" ? tx - tw / 2 : tx;
+        return [x0 - 3, ty - fs, x0 + tw + 3, ty + 4];
+      }
+      // Cost of a spot: 0 is clean. Crossing a faint guide line costs little,
+      // crossing a data line or another label costs a lot, leaving the plot is never allowed.
+      function cost(b) {
+        if (b[0] < L || b[2] > W - R || b[1] < T || b[3] > T + h) return Infinity;
+        var c = 0;
+        for (var i = 0; i < boxes.length; i++) {
+          var o = boxes[i];
+          if (b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]) c += 100;
+        }
+        var pad = [b[0] - 1, b[1] - 1, b[2] + 1, b[3] + 1];
+        for (var j = 0; j < segs.length; j++) if (segHitsBox(segs[j], pad)) c += segs[j][4];
+        return c;
+      }
+      // near: optional [x, y]; spots farther from it cost a little more.
+      function place(cands, tw, fs, near) {
+        var pick = cands[cands.length - 1], best = Infinity;
+        for (var i = 0; i < cands.length; i++) {
+          var bx = boxFor(cands[i][0], cands[i][1], cands[i][2], tw, fs), c = cost(bx);
+          if (near && c < Infinity) c += Math.max(0, Math.min(Math.abs((bx[0] + bx[2]) / 2 - near[0]) - tw / 2, 999) + Math.abs((bx[1] + bx[3]) / 2 - near[1]) - 20) / 12;
+          if (c < best) { best = c; pick = cands[i]; }
+          if (c === 0 && !near) break;
+        }
+        boxes.push(boxFor(pick[0], pick[1], pick[2], tw, fs));
+        return pick;
+      }
+      var marks = [];
+      if (r.paybackSigned !== null && r.paybackSigned === r.paybackCash) marks.push([r.paybackSigned, (narrow ? "Both: month " : "Both pass cost: month ") + r.paybackSigned, false]);
+      else {
+        marks.push([r.paybackSigned, (narrow ? "On paper: month " : "Gross profit signed passes cost: month ") + r.paybackSigned, false]);
+        marks.push([r.paybackCash, (narrow ? "Cash: month " : "Cash passes cost: month ") + r.paybackCash, true]);
+      }
+      marks = marks.filter(function (mk) { return mk[0] !== null && mk[0] <= show; });
+      var labels = [];
+      marks.forEach(function (mk) {
+        var cx = x(mk[0]), cy = y(r.cumCost[mk[0]]);
+        mk.push(cx, cy);
+        boxes.push([cx - 8, cy - 8, cx + 8, cy + 8]);
+        segs.push([cx, T, cx, T + h, 1]);
+      });
+      var hasValley = r.gapMonth > 0 && r.gapMonth <= show && r.maxCashGap > 0;
+      var gx, gy1, gy2;
+      if (hasValley) {
+        gx = x(r.gapMonth); gy1 = y(r.cumCost[r.gapMonth]); gy2 = y(r.cumCash[r.gapMonth]);
         out.push('<line x1="' + gx + '" x2="' + gx + '" y1="' + gy1 + '" y2="' + gy2 + '" stroke="#c10500" stroke-width="1.5" stroke-dasharray="3 3"/>');
-        var vlabel = "The valley: " + money(r.maxCashGap), vw = vlabel.length * 7.4;
+        segs.push([gx, gy1, gx, gy2, 10]);
+      }
+      if (hasValley) {
+        var vlabel = "The valley: " + money(r.maxCashGap), vw = textWidth(vlabel, 13, 7.4);
+        var vmid = (gy1 + gy2) / 2 + 4, vc = [];
+        [0, -16, 16, -32, 32, -48, 48].forEach(function (dy) { vc.push([gx + 8, vmid + dy, "start"], [gx - 8, vmid + dy, "end"]); });
+        for (var dy = 20; gy2 + dy <= T + h - 4; dy += 12) vc.push([gx + 8, gy2 + dy, "start"], [gx - 8, gy2 + dy, "end"]);
+        for (var du = -12; gy1 + du >= T + 13; du -= 12) vc.push([gx + 8, gy1 + du, "start"], [gx - 8, gy1 + du, "end"]);
+        vc.push([gx + 8, T + h - 6, "start"], [gx - 8, T + h - 6, "end"]);
+        for (var dm = -12; gy1 + dm >= T + 13; dm -= 12) vc.push([gx, gy1 + dm, "middle"]);
         var vx = gx + 8, va = "start";
         if (vx + vw > W - R) { vx = gx - 8; va = "end"; }
-        var vy = Math.min(Math.max((gy1 + gy2) / 2 + 4, T + 14), T + h - 6);
-        out.push('<text class="valley" x="' + vx + '" y="' + vy + '" text-anchor="' + va + '">' + vlabel + '</text>');
+        vc.push([vx, Math.min(Math.max(vmid, T + 14), T + h - 6), va]);
+        var vp = place(vc, vw, 13, [gx, (gy1 + gy2) / 2]);
+        labels.push('<text class="valley" x="' + vp[0] + '" y="' + vp[1] + '" text-anchor="' + vp[2] + '">' + vlabel + '</text>');
       }
-      function mark(mm, label, below) {
-        if (mm === null || mm > show) return;
-        var cx = x(mm), cy = y(r.cumCost[mm]);
+      marks.forEach(function (mk) {
+        var label = mk[1], below = mk[2], cx = mk[3], cy = mk[4];
         out.push('<line x1="' + cx + '" x2="' + cx + '" y1="' + T + '" y2="' + (T + h) + '" stroke="#e10600" stroke-opacity=".25"/>');
         out.push('<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="#fff" stroke="#e10600" stroke-width="2.5"/>');
-        var approx = label.length * 6.8, a2 = cx + 10 + approx > W - R ? "end" : "start";
-        var tx = a2 === "end" ? cx - 10 : cx + 10;
+        var approx = textWidth(label, 12, 6.8);
+        var up = [[cx - 10, cy - 12, "end"], [cx + 10, cy - 12, "start"], [cx - 10, cy - 28, "end"], [cx + 10, cy - 28, "start"], [cx - 10, cy - 44, "end"], [cx + 10, cy - 44, "start"]];
+        var down = [[cx + 10, cy + 22, "start"], [cx - 10, cy + 22, "end"], [cx + 10, cy + 38, "start"], [cx - 10, cy + 38, "end"], [cx + 10, cy + 54, "start"], [cx - 10, cy + 54, "end"]];
+        var c = below ? down.concat(up) : up.concat(down);
+        c.push([cx - 8, T + 12, "end"], [cx + 8, T + 12, "start"], [cx - 8, T + h - 6, "end"], [cx + 8, T + h - 6, "start"]);
+        // The old spot is the last resort so the label is always drawn in view.
+        var a2 = cx + 10 + approx > W - R ? "end" : "start", tx = a2 === "end" ? cx - 10 : cx + 10;
         if (a2 === "end" && tx - approx < L) { a2 = "start"; tx = L + 4; }
-        var ty = below ? Math.min(cy + 22, T + h - 6) : Math.max(cy - 12, T + 12);
-        out.push('<text class="mark" x="' + tx + '" y="' + ty + '" text-anchor="' + a2 + '">' + label + '</text>');
-      }
-      if (r.paybackSigned !== null && r.paybackSigned === r.paybackCash) mark(r.paybackSigned, (narrow ? "Both: month " : "Both pass cost: month ") + r.paybackSigned, false);
-      else {
-        mark(r.paybackSigned, (narrow ? "On paper: month " : "Gross profit signed passes cost: month ") + r.paybackSigned, false);
-        mark(r.paybackCash, (narrow ? "Cash: month " : "Cash passes cost: month ") + r.paybackCash, true);
-      }
+        c.push([tx, below ? Math.min(cy + 22, T + h - 6) : Math.max(cy - 12, T + 12), a2]);
+        var pk = place(c, approx, 12);
+        labels.push('<text class="mark" x="' + pk[0] + '" y="' + pk[1] + '" text-anchor="' + pk[2] + '">' + label + '</text>');
+      });
+      out.push.apply(out, labels);
       svg.innerHTML = out.join("");
       var a = "Chart over " + show + " months. ";
       a += r.paybackSigned ? "Gross profit signed passes cost in month " + r.paybackSigned + ". " : "Gross profit signed stays below cost. ";

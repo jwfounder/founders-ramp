@@ -268,6 +268,11 @@ input[type="number"] {
   text-transform: uppercase;
 }
 .books .box-copy h3 { margin-top: 0; }
+@media (max-width: 560px) {
+  .books .box { grid-template-columns: 96px 1fr; gap: 16px; }
+  .books .cover, .books .cover-fallback { width: 96px; height: 144px; }
+  .books .cover-fallback { padding: 8px; font-size: 13px; }
+}
 .principles {
   display: grid;
   grid-template-columns: 1fr 1fr;

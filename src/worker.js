@@ -27,6 +27,10 @@ export default {
       url.hostname = "www.foundersramp.net";
       return Response.redirect(url.toString(), 301);
     }
+    if (path === "/newsroom" || path === "/newsroom/") {
+      url.pathname = "/briefing/";
+      return Response.redirect(url.toString(), 301);
+    }
     if (path === "/index.html") {
       url.pathname = "/";
       return Response.redirect(url.toString(), 301);

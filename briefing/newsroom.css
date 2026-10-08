@@ -23,10 +23,6 @@
 .news-meta time { color: var(--muted); }
 .card.news h3 { color: var(--ink); line-height: 1.15; }
 .news-source { margin-top: auto; padding-top: 14px; color: var(--ink); font-size: 13px; font-weight: 600; }
-@media (max-width: 860px) {
-  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
-  .tab { flex: 0 0 auto; }
-}
 .news-search { position: relative; max-width: 520px; margin: 0 0 20px; }
 .news-search input {
   display: block; width: 100%; box-sizing: border-box; margin: 0;
