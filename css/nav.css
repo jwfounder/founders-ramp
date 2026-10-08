@@ -17,6 +17,7 @@
 .nav-toggle:focus-visible, .nav-sub a:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .nav-sub { display: none; }
 .nav-sub a { display: block; }
+.nav-sep { display: block; height: 0; border-top: 1px solid #3a3a40; }
 
 @media (min-width: 861px) {
   .nav-sub {
@@ -28,6 +29,7 @@
     padding: 6px 0; box-shadow: 0 10px 24px rgba(0,0,0,.25);
   }
   .nav-sub a { padding: 9px 14px; }
+  .nav-sep { margin: 6px 14px; }
   .nav-group:hover .nav-sub, .nav-group.open .nav-sub { display: block; }
   .nav-group:hover .nav-toggle { color: var(--chrome-ink); }
 }
@@ -40,4 +42,5 @@
     border-left: 2px solid var(--red); padding: 2px 0 2px 12px;
   }
   .nav-sub a { padding: 4px 0; }
+  .nav-sep { margin: 4px 0; width: 120px; }
 }
