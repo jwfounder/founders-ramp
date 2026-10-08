@@ -21,7 +21,7 @@ Contact: jw@foundersramp.net
 - [Fractional sales leader vs VP of Sales](https://www.foundersramp.net/answers/fractional-sales-leader-vs-vp-of-sales/): Build the motion before you hire a VP to scale it
 
 ## Tools
-- [First sales hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on gross profit signed and on cash collected
+- [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on gross profit signed and on cash collected
 
 ## Approach
 - [Self and team](https://www.foundersramp.net/approach/self-team/): You still own it. Then someone else does.
