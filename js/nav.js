@@ -28,9 +28,10 @@
     group.addEventListener("mouseleave", function () {
       if (desktop.matches && !group.classList.contains("open")) btn.setAttribute("aria-expanded", "false");
     });
-    // Close when focus or a click moves elsewhere.
+    // Close when focus or a click moves elsewhere. On phones the list opens in place,
+    // so closing on focus loss would move the links mid-tap; there a tap elsewhere closes it.
     group.addEventListener("focusout", function (e) {
-      if (e.relatedTarget && !group.contains(e.relatedTarget)) set(false);
+      if (desktop.matches && e.relatedTarget && !group.contains(e.relatedTarget)) set(false);
     });
     document.addEventListener("click", function (e) { if (!group.contains(e.target)) set(false); });
   });
@@ -53,11 +54,16 @@
   window.matchMedia("(min-width: 861px)").addEventListener("change", function (m) { if (m.matches) set(false); });
 })();
 
-// Keep --menu-h equal to the pinned top menu's real height (pinned table headers sit under it).
+// Keep --menu-h equal to the pinned top menu's real height (pinned table headers and
+// jump-link targets sit under it). While the phone menu is open, keep the closed bar
+// height, so the open menu can size itself against the screen.
 (function () {
   var hdr = document.querySelector("header.chrome");
   if (!hdr) return;
-  function set() { document.documentElement.style.setProperty("--menu-h", hdr.getBoundingClientRect().height + "px"); }
+  function set() {
+    if (hdr.querySelector(".chrome-inner.menu-open")) return;
+    document.documentElement.style.setProperty("--menu-h", hdr.getBoundingClientRect().height + "px");
+  }
   set();
   if ("ResizeObserver" in window) new ResizeObserver(set).observe(hdr);
   else window.addEventListener("resize", set);

@@ -37,6 +37,8 @@ body.page-tracker .tracker-week .week-count {
 @media (max-width: 860px) {
   :root { --menu-h: 173px; }
   :root:has(article.payback) { --menu-h: 181px; }
+  :root:has(.menu-btn) { --menu-h: 63px; }
+  :root:has(.menu-btn):has(article.payback) { --menu-h: 71px; }
 }
 body.page-tracker table.tracker thead th {
   background: #FBF5E6;
