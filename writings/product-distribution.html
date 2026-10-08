@@ -18,6 +18,7 @@
   <script type="application/ld+json">
   {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.foundersramp.net/#org","name":"Founders Ramp","legalName":"Founders Ramp LLC","url":"https://www.foundersramp.net","email":"jw@foundersramp.net","description":"A sales OS for founders and launch teams. Accelerate sales before hiring sellers.","founder":{"@id":"https://www.foundersramp.net/#justin"},"sameAs":["https://www.linkedin.com/in/jweller","https://www.linkedin.com/company/foundersramp","https://www.crunchbase.com/organization/founders-ramp","https://www.foundersramp.net"]},{"@type":"Person","@id":"https://www.foundersramp.net/#justin","name":"Justin Weller","jobTitle":"Founder","worksFor":{"@id":"https://www.foundersramp.net/#org"},"url":"https://www.foundersramp.net","sameAs":["https://www.linkedin.com/in/jweller"]},{"@type":"Article","headline":"Product-led distribution is an oxymoron","description":"The product is necessary. Distribution is decisive. Product without distribution is a bridge built only halfway.","image":"https://www.foundersramp.net/assets/product-led-li.jpg","author":{"@id":"https://www.foundersramp.net/#justin"},"publisher":{"@id":"https://www.foundersramp.net/#org"},"mainEntityOfPage":"https://www.foundersramp.net/writings/product-distribution","isPartOf":{"@id":"https://www.foundersramp.net/#org"}}]}
   </script>
+  <link rel="stylesheet" href="/css/nav.css?v=nav1">
 </head>
 <body class="page-essay">
   <header class="chrome">
@@ -27,7 +28,13 @@
       </a>
             <nav>
         <a href="/">Home</a>
-        <a href="/approach/">Approach</a>
+        <span class="nav-group">
+          <span class="nav-top"><a href="/approach/">Approach</a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-approach-sub" aria-label="Approach tools"></button></span>
+          <span class="nav-sub" id="nav-approach-sub"><span class="nav-sub-inner">
+            <a href="/tools/first-hire-payback/">First sales hire payback calculator</a>
+            <a href="/tracker/">First Sales Hire Tracker</a>
+          </span></span>
+        </span>
         <a href="/writings/" aria-current="page">Blog</a>
         <a href="/approach/books/">Books we love</a>
         <a href="/briefing/">Newsroom</a>
@@ -80,5 +87,6 @@
   </footer>
   <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "83ce71ad88eb495eacf2e29eb98a2835"}'></script><!-- End Cloudflare Web Analytics -->
   <script src="../js/quotes.js?v=rec3" defer></script>
+  <script src="/js/nav.js?v=nav1" defer></script>
 </body>
 </html>
