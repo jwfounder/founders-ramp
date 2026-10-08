@@ -27,3 +27,25 @@
   .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
   .tab { flex: 0 0 auto; }
 }
+.news-search { position: relative; max-width: 520px; margin: 0 0 20px; }
+.news-search input {
+  display: block; width: 100%; box-sizing: border-box; margin: 0;
+  font: 400 16px/1.3 "IBM Plex Sans", system-ui, sans-serif; color: var(--ink);
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 0;
+  padding: 11px 44px 11px 14px; -webkit-appearance: none; appearance: none;
+}
+.news-search input::placeholder { color: var(--muted); opacity: 1; }
+.news-search input:focus { outline: none; border-color: var(--red); }
+.news-search input::-webkit-search-cancel-button,
+.news-search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.news-search-clear {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 44px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: 400 24px/1 "IBM Plex Sans", system-ui, sans-serif; color: var(--muted);
+}
+.news-search-clear:hover, .news-search-clear:focus-visible { color: var(--red); }
+.news-search-clear[hidden], .news-empty[hidden] { display: none; }
+.news-empty { margin: 8px 0 0; color: var(--muted); font-size: 16px; }
+@media (max-width: 860px) {
+  .news-search { max-width: none; }
+}
