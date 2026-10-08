@@ -17,6 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap">
   <link rel="stylesheet" href="/css/site.css?v=os31">
+  <link rel="stylesheet" href="/css/nav.css?v=nav1">
 </head>
 
 <body class="page-essay">
@@ -27,7 +28,13 @@
       </a>
       <nav>
         <a href="/">Home</a>
-        <a href="/approach/">Approach</a>
+        <span class="nav-group">
+          <span class="nav-top"><a href="/approach/">Approach</a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-approach-sub" aria-label="Approach tools"></button></span>
+          <span class="nav-sub" id="nav-approach-sub"><span class="nav-sub-inner">
+            <a href="/tools/first-hire-payback/">First sales hire payback calculator</a>
+            <a href="/tracker/">First Sales Hire Tracker</a>
+          </span></span>
+        </span>
         <a href="/writings/">Blog</a>
         <a href="/approach/books/">Books we love</a>
         <a href="/briefing/">Newsroom</a>
@@ -82,5 +89,6 @@
     </div>
   </footer>
   <script src="/js/quotes.js?v=rec3" defer></script>
+  <script src="/js/nav.js?v=nav1" defer></script>
 </body>
 </html>
