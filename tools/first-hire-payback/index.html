@@ -324,11 +324,11 @@
       <div class="chart-box wide">
         <div class="legend" aria-hidden="true">
           <span><i class="k-cost"></i>What the hire has cost, to date</span>
-          <span><i class="k-signed"></i>Gross profit signed, to date</span>
+          <span><i class="k-signed"></i>Closed revenue (gross profit), to date</span>
           <span><i class="k-cash"></i>Cash collected after gross margin, to date</span>
           <span><i class="k-valley"></i>The valley: cash you're out</span>
         </div>
-        <svg id="chart" viewBox="0 0 760 340" role="img" aria-label="Chart of what the hire has cost against gross profit signed and cash collected, by month"></svg>
+        <svg id="chart" viewBox="0 0 760 340" role="img" aria-label="Chart of what the hire has cost against closed revenue (gross profit) and cash collected, by month"></svg>
       </div>
 
       <section class="levers wide" aria-labelledby="levers-h">
@@ -364,7 +364,7 @@
           <li><strong>Full output</strong> is live deals per month times win rate times deal size, or your quota divided by twelve. Either way, it's then multiplied by the share they actually hit.</li>
           <li><strong>Sales cycle</strong>: deals they start in a month sign that many months later.</li>
           <li><strong>Deals you hand over</strong> are treated as pipeline that closes at your win rate, spread evenly across the first sales cycle. They count toward payback because the hire closes them, but they don't speed up the hire's own ramp. If you'd close them yourself anyway, leave this at zero.</li>
-          <li><strong>Gross profit signed</strong> counts each contract year's value times gross margin, on the day it's signed or renewed. <strong>Cash collected</strong> counts the same dollars when they arrive. Billed monthly starts the month after signing. Billed up front arrives on signing and at each renewal.</li>
+          <li><strong>Closed revenue (gross profit)</strong> counts each contract year's value times gross margin, on the day it's signed or renewed. <strong>Cash collected</strong> counts the same dollars when they arrive. Billed monthly starts the month after signing. Billed up front arrives on signing and at each renewal.</li>
           <li><strong>Renewals</strong>: each year, the share of customers you set as lost doesn't renew. The rest renew at the same price. Both lines use the same renewals, so cash never runs ahead of gross profit signed.</li>
           <li><strong>Runway</strong>, if you add it, starts from your cash today, takes off your current monthly burn, and adds the hire's net effect month by month. The valley's share of runway is the valley divided by your current burn.</li>
           <li><strong>Suggestions and levers</strong> each change one input and rerun the same math. Nothing else moves.</li>
@@ -752,7 +752,7 @@
       var marks = [];
       if (r.paybackSigned !== null && r.paybackSigned === r.paybackCash) marks.push([r.paybackSigned, (narrow ? "Both: month " : "Both pass cost: month ") + r.paybackSigned, false]);
       else {
-        marks.push([r.paybackSigned, (narrow ? "On paper: month " : "Gross profit signed passes cost: month ") + r.paybackSigned, false]);
+        marks.push([r.paybackSigned, (narrow ? "On paper: month " : "Closed revenue (gross profit) passes cost: month ") + r.paybackSigned, false]);
         marks.push([r.paybackCash, (narrow ? "Cash: month " : "Cash passes cost: month ") + r.paybackCash, true]);
       }
       marks = marks.filter(function (mk) { return mk[0] !== null && mk[0] <= show; });
@@ -803,7 +803,7 @@
       out.push.apply(out, labels);
       svg.innerHTML = out.join("");
       var a = "Chart over " + show + " months. ";
-      a += r.paybackSigned ? "Gross profit signed passes cost in month " + r.paybackSigned + ". " : "Gross profit signed stays below cost. ";
+      a += r.paybackSigned ? "Closed revenue (gross profit) passes cost in month " + r.paybackSigned + ". " : "Closed revenue (gross profit) stays below cost. ";
       a += r.paybackCash ? "Cash collected passes cost in month " + r.paybackCash + ". " : "Cash collected stays below cost. ";
       a += "The valley is " + full(r.maxCashGap) + " in month " + r.gapMonth + ".";
       svg.setAttribute("aria-label", a);
