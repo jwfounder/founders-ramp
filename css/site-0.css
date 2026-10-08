@@ -228,6 +228,20 @@ h1 {
 @media (min-width: 626px) and (max-width: 775.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(332px - 12.16vw); } }
 @media (min-width: 776px) and (max-width: 860.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: 202px; } }
 @media (min-width: 861px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(244.5px - 4.03vw); } }
+/* The dots sit at the bottom of that reserved box, so they stay put while the quotes change.
+   The bottom padding is the space the dots used to take in the flow, so the box height is unchanged. */
+.ref-box[data-refs] { position: relative; padding-bottom: 17px; }
+.ref-box[data-refs] .ref-dots { position: absolute; left: 14px; bottom: 10px; margin: 0; }
+.hero-split .ref-box[data-refs] { padding-bottom: 27px; justify-content: flex-start; }
+body.page-home .ref-box.ref-wide[data-refs] { padding-bottom: 31px; }
+body.page-home .ref-box.ref-wide[data-refs] .ref-dots { left: 20px; bottom: 14px; }
+@media (max-width: 860px) {
+  .ref-box[data-refs] { padding-bottom: 25.5px; }
+  .ref-box[data-refs] .ref-dots { left: 5.5px; bottom: 1.5px; margin: 0; }
+  .hero-split .ref-box[data-refs] { padding-bottom: 27px; }
+  body.page-home .ref-box.ref-wide[data-refs] { padding-bottom: 31px; }
+  body.page-home .ref-box.ref-wide[data-refs] .ref-dots { left: 11.5px; bottom: 5.5px; }
+}
 .ref-band {
   padding: 28px 0 36px;
   border-top: 1px solid var(--line);
