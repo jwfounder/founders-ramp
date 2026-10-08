@@ -36,6 +36,23 @@
   });
 })();
 
+// Phone: the menu button shows and hides the links.
+(function () {
+  var btn = document.querySelector(".menu-btn");
+  var inner = btn && btn.closest(".chrome-inner");
+  if (!inner) return;
+  function set(open) {
+    inner.classList.toggle("menu-open", open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  btn.addEventListener("click", function () { set(!inner.classList.contains("menu-open")); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && inner.classList.contains("menu-open")) { set(false); btn.focus(); }
+  });
+  document.addEventListener("click", function (e) { if (!inner.contains(e.target)) set(false); });
+  window.matchMedia("(min-width: 861px)").addEventListener("change", function (m) { if (m.matches) set(false); });
+})();
+
 // Keep --menu-h equal to the pinned top menu's real height (pinned table headers sit under it).
 (function () {
   var hdr = document.querySelector("header.chrome");
