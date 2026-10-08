@@ -19,6 +19,7 @@
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/nav.css?v=nav1">
 </head>
 <body class="page-essay">
  <header class="chrome">
@@ -28,7 +29,13 @@
  </a>
        <nav>
         <a href="/">Home</a>
-        <a href="/approach/">Approach</a>
+        <span class="nav-group">
+          <span class="nav-top"><a href="/approach/">Approach</a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-approach-sub" aria-label="Approach tools"></button></span>
+          <span class="nav-sub" id="nav-approach-sub"><span class="nav-sub-inner">
+            <a href="/tools/first-hire-payback/">First sales hire payback calculator</a>
+            <a href="/tracker/">First Sales Hire Tracker</a>
+          </span></span>
+        </span>
         <a href="/writings/" aria-current="page">Blog</a>
         <a href="/approach/books/">Books we love</a>
         <a href="/briefing/">Newsroom</a>
@@ -68,5 +75,6 @@
  </footer>
   <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "83ce71ad88eb495eacf2e29eb98a2835"}'></script><!-- End Cloudflare Web Analytics -->
   <script src="../js/quotes.js?v=rec3" defer></script>
+  <script src="/js/nav.js?v=nav1" defer></script>
 </body>
 </html>
