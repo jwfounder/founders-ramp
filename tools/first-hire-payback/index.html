@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>First hire payback calculator · Founders Ramp</title>
-  <meta name="description" content="See the month your first sales hire pays back what they cost, on gross profit signed and on cash collected. Counts ramp, sales cycle, and churn.">
+  <meta name="description" content="See the month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected. Counts ramp, sales cycle, and churn.">
   <link rel="canonical" href="https://www.foundersramp.net/tools/first-hire-payback/">
   <meta property="og:title" content="First hire payback calculator · Founders Ramp">
-  <meta property="og:description" content="See the month your first sales hire pays back what they cost, on gross profit signed and on cash collected.">
+  <meta property="og:description" content="See the month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected.">
   <meta property="og:url" content="https://www.foundersramp.net/tools/first-hire-payback/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Founders Ramp">
@@ -350,7 +350,7 @@
         <div class="table-wrap">
           <table>
             <caption>Month-by-month numbers for the inputs above. Dollar amounts are to date unless marked this month.</caption>
-            <thead><tr><th scope="col">Month</th><th scope="col">Output</th><th scope="col">New contracts this month</th><th scope="col">Cost to date</th><th scope="col">Gross profit signed to date</th><th scope="col">Cash to date</th></tr></thead>
+            <thead><tr><th scope="col">Month</th><th scope="col">Output</th><th scope="col">New contracts this month</th><th scope="col">Cost to date</th><th scope="col">Closed revenue (gross profit) to date</th><th scope="col">Cash to date</th></tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
@@ -365,7 +365,7 @@
           <li><strong>Sales cycle</strong>: deals they start in a month sign that many months later.</li>
           <li><strong>Deals you hand over</strong> are treated as pipeline that closes at your win rate, spread evenly across the first sales cycle. They count toward payback because the hire closes them, but they don't speed up the hire's own ramp. If you'd close them yourself anyway, leave this at zero.</li>
           <li><strong>Closed revenue (gross profit)</strong> counts each contract year's value times gross margin, on the day it's signed or renewed. <strong>Cash collected</strong> counts the same dollars when they arrive. Billed monthly starts the month after signing. Billed up front arrives on signing and at each renewal.</li>
-          <li><strong>Renewals</strong>: each year, the share of customers you set as lost doesn't renew. The rest renew at the same price. Both lines use the same renewals, so cash never runs ahead of gross profit signed.</li>
+          <li><strong>Renewals</strong>: each year, the share of customers you set as lost doesn't renew. The rest renew at the same price. Both lines use the same renewals, so cash never runs ahead of closed revenue (gross profit).</li>
           <li><strong>Runway</strong>, if you add it, starts from your cash today, takes off your current monthly burn, and adds the hire's net effect month by month. The valley's share of runway is the valley divided by your current burn.</li>
           <li><strong>Suggestions and levers</strong> each change one input and rerun the same math. Nothing else moves.</li>
           <li><strong>Presets</strong>: Seed, Mid-market, and Services-heavy are example starting points, not benchmarks. The Typical AE preset uses only these numbers from The Bridge Group: 6.2-month ramp, $200K pay at target, and an $875K median SaaS quota (<a href="https://www.bridgegroupinc.com/research/2026-ae-models-motions-metrics">2026 report</a>), with a 53:47 base to variable split (<a href="https://blog.bridgegroupinc.com/2024-ae-metrics-compensation-benchmark">2024 report</a>). The same 2026 report found 48% of AEs hit quota, so the preset leaves the share they hit to you.</li>
