@@ -44,3 +44,28 @@
   .nav-sub a { padding: 4px 0; }
   .nav-sep { margin: 4px 0; width: 120px; }
 }
+
+/* Phone: logo plus a menu button; the links open below. */
+.menu-btn { display: none; }
+@media (max-width: 860px) {
+  .chrome-inner:has(.menu-btn) { align-items: center; }
+  .menu-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; margin: 0 -10px 0 auto; padding: 0;
+    border: 0; background: none; color: var(--chrome-ink); cursor: pointer;
+  }
+  .menu-btn span, .menu-btn span::before, .menu-btn span::after {
+    display: block; width: 22px; height: 2px; background: currentColor;
+    transition: transform .15s, background-color .15s;
+  }
+  .menu-btn span { position: relative; }
+  .menu-btn span::before, .menu-btn span::after { content: ""; position: absolute; left: 0; }
+  .menu-btn span::before { top: -7px; }
+  .menu-btn span::after { top: 7px; }
+  .menu-btn[aria-expanded="true"] span { background: transparent; }
+  .menu-btn[aria-expanded="true"] span::before { transform: translateY(7px) rotate(45deg); }
+  .menu-btn[aria-expanded="true"] span::after { transform: translateY(-7px) rotate(-45deg); }
+  .menu-btn:focus-visible { outline: 2px solid var(--red); outline-offset: -4px; }
+  .chrome-inner:has(.menu-btn) nav { display: none; }
+  .chrome-inner.menu-open nav { display: grid; padding: 4px 0 6px; }
+}
