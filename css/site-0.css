@@ -37,6 +37,9 @@ header.chrome {
   display: flex; align-items: center; justify-content: space-between;
   min-height: 64px; gap: 20px;
   padding: 6px 0;
+  /* Keep the logo and menu off the screen edges below ~1160px wide. At 1160px and up this is 0, as before. */
+  padding-left: clamp(0px, calc(20px - (100vw - 1120px) / 2), 20px);
+  padding-right: clamp(0px, calc(20px - (100vw - 1120px) / 2), 20px);
 }
 .brand {
   display: flex; align-items: center; gap: 0; text-decoration: none;
@@ -185,6 +188,17 @@ h1 {
   cursor: pointer;
 }
 .ref-dots button.on { background: var(--red); }
+@media (max-width: 860px) {
+  /* 24px tap area around each 7px dot. The dot itself is unchanged. */
+  .ref-dots { gap: 0; margin: 1.5px 0 -8.5px -8.5px; }
+  .ref-dots button { position: relative; width: 24px; height: 24px; border-radius: 0; background: none; }
+  .ref-dots button::before {
+    content: ""; position: absolute; left: 8.5px; top: 8.5px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--line);
+  }
+  .ref-dots button.on { background: none; }
+  .ref-dots button.on::before { background: var(--red); }
+}
 @media (prefers-reduced-motion: reduce) {
   .ref-slide { transition: none; }
 }

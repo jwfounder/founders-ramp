@@ -11,6 +11,7 @@
 .card.post.lead .post-body { justify-content: center; padding: 32px; background: var(--chrome); }
 .card.post.lead h3 { color: var(--chrome-ink); font-size: clamp(30px, 3.4vw, 44px); line-height: 1.02; margin: 0 0 12px; }
 .card.post.lead p { color: var(--chrome-muted); font-size: 18px; }
+.card.post.lead .meta { color: #e85a4f; }
 .card.post.featured h3 { font-size: 26px; }
 .blog-featured { margin: 0 0 40px; }
 .blog-more { font-size: 28px; margin: 0 0 16px; }
