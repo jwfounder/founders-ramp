@@ -202,6 +202,32 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   .ref-slide { transition: none; }
 }
+/* Reserve the References box's full height before quotes.js fills it, so nothing below it moves.
+   Values are the tallest quote at each width (measured), so no quote is ever cut off. */
+@media (max-width: 377.98px) { .ref-box[data-refs] { min-height: calc(961.5px - 156.36vw); } }
+@media (min-width: 378px) and (max-width: 411.98px) { .ref-box[data-refs] { min-height: calc(639px - 72.46vw); } }
+@media (min-width: 412px) and (max-width: 465.98px) { .ref-box[data-refs] { min-height: calc(657px - 79.21vw); } }
+@media (min-width: 466px) and (max-width: 609.98px) { .ref-box[data-refs] { min-height: calc(355px - 16.33vw); } }
+@media (min-width: 610px) and (max-width: 860.98px) { .ref-box[data-refs] { min-height: 225.5px; } }
+@media (min-width: 861px) { .ref-box[data-refs] { min-height: 217px; } }
+@media (max-width: 377.98px) { .hero-split .ref-box[data-refs] { min-height: calc(971px - 156.36vw); } }
+@media (min-width: 378px) and (max-width: 411.98px) { .hero-split .ref-box[data-refs] { min-height: calc(648.5px - 72.46vw); } }
+@media (min-width: 412px) and (max-width: 465.98px) { .hero-split .ref-box[data-refs] { min-height: calc(666.5px - 79.21vw); } }
+@media (min-width: 466px) and (max-width: 609.98px) { .hero-split .ref-box[data-refs] { min-height: calc(364.5px - 16.33vw); } }
+@media (min-width: 610px) and (max-width: 759.98px) { .hero-split .ref-box[data-refs] { min-height: calc(322px - 12.16vw); } }
+@media (min-width: 760px) and (max-width: 860.98px) { .hero-split .ref-box[data-refs] { min-height: 194px; } }
+@media (min-width: 861px) and (max-width: 980.98px) { .hero-split .ref-box[data-refs] { min-height: calc(752.5px - 39.98vw); } }
+@media (min-width: 981px) and (max-width: 1072.98px) { .hero-split .ref-box[data-refs] { min-height: calc(611.5px - 26.35vw); } }
+@media (min-width: 1073px) { .hero-split .ref-box[data-refs] { min-height: calc(376px - 6.37vw); } }
+@media (max-width: 325.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: 511px; } }
+@media (min-width: 326px) and (max-width: 367.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(908px - 128.91vw); } }
+@media (min-width: 368px) and (max-width: 401.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(897px - 128.71vw); } }
+@media (min-width: 402px) and (max-width: 427.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(765.5px - 96.61vw); } }
+@media (min-width: 428px) and (max-width: 481.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(687px - 79.21vw); } }
+@media (min-width: 482px) and (max-width: 625.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(375.5px - 16.33vw); } }
+@media (min-width: 626px) and (max-width: 775.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(332px - 12.16vw); } }
+@media (min-width: 776px) and (max-width: 860.98px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: 202px; } }
+@media (min-width: 861px) { body.page-home .ref-box.ref-wide[data-refs] { min-height: calc(244.5px - 4.03vw); } }
 .ref-band {
   padding: 28px 0 36px;
   border-top: 1px solid var(--line);
