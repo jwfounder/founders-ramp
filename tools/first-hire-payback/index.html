@@ -83,7 +83,7 @@
     .payback summary.toggle { cursor: pointer; font-weight: 600; margin: 0 0 12px; }
     .payback .table-wrap { overflow-x: auto; max-height: 28rem; overflow-y: auto; border: 1px solid var(--line); background: var(--bg-2); }
     .payback table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
-    .payback caption { text-align: left; font-size: 13px; color: var(--muted); padding: 8px 10px; }
+    .payback .table-note { text-align: left; font-size: 13px; color: var(--muted); margin: 0 0 8px; }
     .payback th, .payback td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
     .payback th { position: sticky; top: 0; background: var(--bg-2); color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
     .payback th:first-child, .payback td:first-child { text-align: left; }
@@ -157,7 +157,7 @@
       <h1>When does your first sales hire pay for itself?</h1>
       <aside class="summary">
         <p class="meta">How it works</p>
-        <p>Put in what the hire costs, how long they take to get up to speed, how long your deals take to close, and what a won deal is worth. You'll see the month the hire has brought in more than they've cost you, two ways: on gross profit from contracts signed, and on cash in the bank.</p>
+        <p>Put in what the hire costs, how long they take to get up to speed, how long your deals take to close, and what a won deal is worth. You'll see the month the hire has brought in more than they've cost you, two ways: on closed revenue (gross profit), and on cash in the bank.</p>
       </aside>
 
       <form class="calc wide" id="calc" autocomplete="off" novalidate onsubmit="return false">
@@ -350,9 +350,9 @@
 
       <details class="wide table">
         <summary class="toggle">See the month-by-month numbers</summary>
+        <p class="table-note" id="month-table-note">Month-by-month numbers for the inputs above. Dollar amounts are to date unless marked this month.</p>
         <div class="table-wrap">
-          <table>
-            <caption>Month-by-month numbers for the inputs above. Dollar amounts are to date unless marked this month.</caption>
+          <table aria-describedby="month-table-note">
             <thead><tr><th scope="col">Month</th><th scope="col">Output</th><th scope="col">New contracts this month</th><th scope="col">Cost to date</th><th scope="col">Closed revenue (gross profit) to date</th><th scope="col">Cash to date</th></tr></thead>
             <tbody id="rows"></tbody>
           </table>
@@ -393,7 +393,7 @@
     </div>
   </footer>
   <div class="sticky-bar" id="sticky" aria-hidden="true">
-    <span>Signed <b id="s-signed">&nbsp;</b></span>
+    <span>Closed <b id="s-signed">&nbsp;</b></span>
     <span>Cash <b id="s-cash">&nbsp;</b></span>
     <span>Valley <b id="s-gap">&nbsp;</b></span>
   </div>
