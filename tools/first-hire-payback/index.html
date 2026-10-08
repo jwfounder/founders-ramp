@@ -750,6 +750,11 @@
         return pick;
       }
       var marks = [];
+      // Short form of each wide label, used when the wide one has no clean spot.
+      var shortOf = {};
+      shortOf["Both pass cost: month " + r.paybackSigned] = "Both: month " + r.paybackSigned;
+      shortOf["Closed revenue (gross profit) passes cost: month " + r.paybackSigned] = "On paper: month " + r.paybackSigned;
+      shortOf["Cash passes cost: month " + r.paybackCash] = "Cash: month " + r.paybackCash;
       if (r.paybackSigned !== null && r.paybackSigned === r.paybackCash) marks.push([r.paybackSigned, (narrow ? "Both: month " : "Both pass cost: month ") + r.paybackSigned, false]);
       else {
         marks.push([r.paybackSigned, (narrow ? "On paper: month " : "Closed revenue (gross profit) passes cost: month ") + r.paybackSigned, false]);
@@ -788,16 +793,24 @@
         var label = mk[1], below = mk[2], cx = mk[3], cy = mk[4];
         out.push('<line x1="' + cx + '" x2="' + cx + '" y1="' + T + '" y2="' + (T + h) + '" stroke="#e10600" stroke-opacity=".25"/>');
         out.push('<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="#fff" stroke="#e10600" stroke-width="2.5"/>');
-        var approx = textWidth(label, 12, 6.8);
-        var up = [[cx - 10, cy - 12, "end"], [cx + 10, cy - 12, "start"], [cx - 10, cy - 28, "end"], [cx + 10, cy - 28, "start"], [cx - 10, cy - 44, "end"], [cx + 10, cy - 44, "start"]];
-        var down = [[cx + 10, cy + 22, "start"], [cx - 10, cy + 22, "end"], [cx + 10, cy + 38, "start"], [cx - 10, cy + 38, "end"], [cx + 10, cy + 54, "start"], [cx - 10, cy + 54, "end"]];
-        var c = below ? down.concat(up) : up.concat(down);
-        c.push([cx - 8, T + 12, "end"], [cx + 8, T + 12, "start"], [cx - 8, T + h - 6, "end"], [cx + 8, T + h - 6, "start"]);
-        // The old spot is the last resort so the label is always drawn in view.
-        var a2 = cx + 10 + approx > W - R ? "end" : "start", tx = a2 === "end" ? cx - 10 : cx + 10;
-        if (a2 === "end" && tx - approx < L) { a2 = "start"; tx = L + 4; }
-        c.push([tx, below ? Math.min(cy + 22, T + h - 6) : Math.max(cy - 12, T + 12), a2]);
-        var pk = place(c, approx, 12);
+        function spots(lb) {
+          var approx = textWidth(lb, 12, 6.8);
+          var up = [[cx - 10, cy - 12, "end"], [cx + 10, cy - 12, "start"], [cx - 10, cy - 28, "end"], [cx + 10, cy - 28, "start"], [cx - 10, cy - 44, "end"], [cx + 10, cy - 44, "start"]];
+          var down = [[cx + 10, cy + 22, "start"], [cx - 10, cy + 22, "end"], [cx + 10, cy + 38, "start"], [cx - 10, cy + 38, "end"], [cx + 10, cy + 54, "start"], [cx - 10, cy + 54, "end"]];
+          var c = below ? down.concat(up) : up.concat(down);
+          c.push([cx - 8, T + 12, "end"], [cx + 8, T + 12, "start"], [cx - 8, T + h - 6, "end"], [cx + 8, T + h - 6, "start"]);
+          // The old spot is the last resort so the label is always drawn in view.
+          var a2 = cx + 10 + approx > W - R ? "end" : "start", tx = a2 === "end" ? cx - 10 : cx + 10;
+          if (a2 === "end" && tx - approx < L) { a2 = "start"; tx = L + 4; }
+          c.push([tx, below ? Math.min(cy + 22, T + h - 6) : Math.max(cy - 12, T + 12), a2]);
+          var low = Infinity;
+          for (var q = 0; q < c.length; q++) low = Math.min(low, cost(boxFor(c[q][0], c[q][1], c[q][2], approx, 12)));
+          return { c: c, w: approx, low: low };
+        }
+        var sp = spots(label);
+        // A wide label that would sit on another label or leave the plot falls back to its short form.
+        if (shortOf[label] && sp.low >= 100) { var sp2 = spots(shortOf[label]); if (sp2.low < sp.low) { label = shortOf[label]; sp = sp2; } }
+        var pk = place(sp.c, sp.w, 12);
         labels.push('<text class="mark" x="' + pk[0] + '" y="' + pk[1] + '" text-anchor="' + pk[2] + '">' + label + '</text>');
       });
       out.push.apply(out, labels);
