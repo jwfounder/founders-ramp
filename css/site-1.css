@@ -273,6 +273,65 @@ input[type="number"] {
   .books .cover, .books .cover-fallback { width: 96px; height: 144px; }
   .books .cover-fallback { padding: 8px; font-size: 13px; }
 }
+/* Designed cover tiles for books page entries without a real cover. Same box as a cover. */
+.books .cover-tile {
+  --tile-accent: var(--red);
+  --tile-ink: #ff6b4a;
+  position: relative;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 12px 14px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tile-accent) 22%, transparent), transparent 70%),
+    linear-gradient(180deg, #26262d 0%, #17171b 100%);
+  border: 1px solid #0b0b0d;
+  border-top: 6px solid var(--tile-accent);
+  box-shadow: 2px 6px 16px rgba(20, 20, 20, 0.14);
+}
+.books .cover-tile::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+.books .cover-tile-method { --tile-accent: #fbbf24; --tile-ink: #fbbf24; }
+.books .cover-tile-mark {
+  display: block;
+  width: 112px;
+  aspect-ratio: 445 / 325;
+  background: url("../assets/logo-header.jpg") center / cover no-repeat;
+  -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+}
+.books .cover-tile-big {
+  display: block;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .02em;
+  color: #fff;
+}
+.books .cover-tile-small {
+  display: block;
+  padding-top: 9px;
+  border-top: 2px solid var(--tile-accent);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: .12em;
+  color: var(--tile-ink);
+  text-wrap: balance;
+}
+@media (max-width: 560px) {
+  .books .cover-tile { gap: 6px; padding: 12px 6px 8px; border-top-width: 4px; }
+  .books .cover-tile::after { inset: 4px; }
+  .books .cover-tile-mark { width: 68px; }
+  .books .cover-tile-big { font-size: 25px; }
+  .books .cover-tile-small { padding-top: 6px; font-size: 10px; letter-spacing: .08em; }
+}
 .principles {
   display: grid;
   grid-template-columns: 1fr 1fr;
