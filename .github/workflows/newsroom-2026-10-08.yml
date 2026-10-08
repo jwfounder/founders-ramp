@@ -1,0 +1,90 @@
+name: Newsroom 2026-10-08 assemble (one-off, removes itself)
+on:
+  push:
+    branches: [newsroom/2026-10-08]
+    paths: [".github/workflows/newsroom-2026-10-08.yml"]
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: newsroom/2026-10-08
+          fetch-depth: 0
+      - run: pip install pillow
+      - name: Add card, refresh home strip, build WebP, remove one-off
+        run: |
+          python3 <<'PY'
+          import pathlib, re
+          from PIL import Image, ImageDraw, ImageFont
+          W, H = 720, 378
+          slug = "2026-10-08-survey-procurement-teams-test-ai-without-a-formal-plan"
+          url = "https://www.supplychain247.com/article/procureability-survey-procurement-ai-planning-gap"
+          title = "Survey: 68% of Procurement Teams Test AI Without a Formal Plan"
+          alt = "Bright illustration card reading Only 8% of procurement leaders have a defined AI plan, with bars for 8% planned, 68% testing and 24% exploring"
+          source = "24/7 Staff (Supply Chain 24/7)"
+          body = "Only 8% of the procurement leaders ProcureAbility surveyed have a defined plan for AI, and 47% say it is hard to tell useful tools from overhyped ones. A demo on clean sample data blends in, so run one real, messy example of theirs through your product while they watch."
+          img = f'<span class="thumb"><img src="../assets/newsroom/{slug}.webp" alt="{alt}" width="720" height="378" loading="lazy" decoding="async"></span>'
+          meta = '<span class="news-meta"><span class="news-topic">AI at work</span> <time datetime="2026-10-08">2026-10-08</time></span>'
+          I = " " * 10
+          bcard = (f'{I}<a class="card news" href="{url}" target="_blank" rel="noopener" data-topic="ai">\n'
+                   f'{I}  {img}\n{I}  <div class="news-body">\n{I}    {meta}\n{I}    <h3>{title}</h3>\n'
+                   f'{I}    <p>{body}</p>\n{I}    <span class="news-source">{source}</span>\n{I}  </div>\n{I}</a>\n')
+          hcard = (f'{I}<a class="card news" href="{url}" target="_blank" rel="noopener">\n'
+                   f'{I}  {img}\n{I}  <div class="news-body">\n{I}    {meta}\n{I}    <h3>{title}</h3>\n'
+                   f'{I}    <span class="news-source">{source}</span>\n{I}  </div>\n{I}</a>\n')
+          b = pathlib.Path("briefing/index.html"); s = b.read_text(encoding="utf-8")
+          assert url not in s
+          a = '        <div class="cards news-grid">\n'; assert s.count(a) == 1
+          s = s.replace(a, a + bcard, 1)
+          s = s.replace('aria-pressed="true">All <span>32</span>', 'aria-pressed="true">All <span>33</span>', 1)
+          s = s.replace('AI at work <span>9</span>', 'AI at work <span>10</span>', 1)
+          assert 'All <span>33</span>' in s and 'AI at work <span>10</span>' in s
+          assert s.count('class="card news"') == 33 and s.count('data-topic="ai"') == 10, (s.count('class="card news"'), s.count('data-topic="ai"'))
+          b.write_text(s, encoding="utf-8")
+          h = pathlib.Path("home/index.html"); s = h.read_text(encoding="utf-8")
+          a = '        <div class="cards news-strip">\n'; assert s.count(a) == 1
+          s = s.replace(a, a + hcard, 1)
+          s, n = re.subn(r' {10}<a class="card news" href="https://www\.techzine\.eu/news/applications/144735/schneider-electric-acquires-ptc-for-22-6-billion/" target="_blank" rel="noopener">\n.*?</a>\n', "", s, count=1, flags=re.S)
+          assert n == 1
+          strip = s.split('cards news-strip')[1].split('<section')[0]
+          assert strip.count('class="card news"') == 3, strip.count('class="card news"')
+          h.write_text(s, encoding="utf-8")
+          im = Image.new("RGB", (W, H), (124, 58, 237))
+          d = ImageDraw.Draw(im)
+          d.rectangle([0, 0, W, 28], fill=(250, 204, 21))
+          d.rectangle([0, H - 28, W, H], fill=(16, 185, 129))
+          d.rounded_rectangle([44, 52, W - 44, H - 52], radius=20, fill=(255, 255, 255))
+          try:
+              lg = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 32)
+              md = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 22)
+              sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 19)
+          except Exception:
+              lg = ImageFont.load_default(size=32); md = ImageFont.load_default(size=22); sm = ImageFont.load_default(size=19)
+          d.text((72, 74), "Only 8% of procurement leaders", fill=(15, 23, 42), font=lg)
+          d.text((72, 116), "have a defined AI plan", fill=(15, 23, 42), font=lg)
+          d.text((72, 166), "ProcureAbility survey, Oct 7, 2026", fill=(71, 85, 105), font=sm)
+          bars = [("Defined plan", 8, (236, 72, 153)), ("Testing, no plan", 68, (249, 115, 22)), ("Still exploring", 24, (14, 165, 233))]
+          x0, maxw = 260, 300
+          for i, (lab, v, c) in enumerate(bars):
+              y = 204 + i * 38
+              d.text((72, y + 2), lab, fill=(30, 41, 59), font=sm)
+              w = max(10, int(maxw * v / 68))
+              d.rounded_rectangle([x0, y, x0 + w, y + 26], radius=6, fill=c)
+              d.text((x0 + w + 10, y + 1), f"{v}%", fill=(30, 41, 59), font=md)
+          out = pathlib.Path(f"assets/newsroom/{slug}.webp"); out.parent.mkdir(parents=True, exist_ok=True)
+          im.save(out, "WEBP", quality=82, method=6)
+          assert 3000 < out.stat().st_size < 150000, out.stat().st_size
+          pathlib.Path(".github/workflows/newsroom-2026-10-08.yml").unlink(missing_ok=True)
+          print("ok", out.stat().st_size)
+          PY
+      - name: Commit assembled Newsroom card
+        run: |
+          git config user.name "jwfounder"
+          git config user.email "justinweller.jw@gmail.com"
+          git add -A
+          git status --short
+          git commit -m "Newsroom: procurement leaders can't tell useful AI tools from hype (2026-10-08)"
+          git push origin HEAD:newsroom/2026-10-08
