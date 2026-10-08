@@ -31,12 +31,25 @@ body.page-tracker .tracker-week .week-count {
   letter-spacing: 0;
   font-size: 13px;
 }
+/* Height of the pinned top menu. nav.js keeps it exact; these are the fallbacks. */
+:root { --menu-h: 65px; }
+:root:has(article.payback) { --menu-h: 73px; }
+@media (max-width: 860px) {
+  :root { --menu-h: 173px; }
+  :root:has(article.payback) { --menu-h: 181px; }
+}
 body.page-tracker table.tracker thead th {
-  position: sticky;
-  top: 64px;
-  z-index: 5;
   background: #FBF5E6;
   box-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+/* Pin the header under the menu only where the table fits without sideways scrolling
+   (tracker.css drops the scroll box there). Narrower, it scrolls with the table. */
+@media (min-width: 980px) {
+  body.page-tracker table.tracker thead th {
+    position: sticky;
+    top: var(--menu-h);
+    z-index: 5;
+  }
 }
 body.page-essay:has(article.payback) header.chrome::after {
   content: "";
