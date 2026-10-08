@@ -8,7 +8,10 @@ body.page-tracker .hero {
 .tracker-why h2, .tracker-list h2 { font-size: 30px; margin: 0 0 16px; }
 .tracker-list h3 { font-size: 24px; margin: 40px 0 12px; }
 .table-scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--bg-2); }
-table.tracker { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.4; }
+/* Wide screens: the table fits, so no scroll box. A scroll box would trap the pinned header
+   inside it and push it down over the first row. */
+@media (min-width: 980px) { .table-scroll { overflow: visible; } }
+table.tracker { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 15px; line-height: 1.4; } /* separate: the header's red rule moves with the pinned header */
 table.tracker th {
   text-align: left; font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
   color: var(--muted); font-weight: 600; padding: 12px 14px; border-bottom: 2px solid var(--red);

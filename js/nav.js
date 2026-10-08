@@ -35,3 +35,13 @@
     document.addEventListener("click", function (e) { if (!group.contains(e.target)) set(false); });
   });
 })();
+
+// Keep --menu-h equal to the pinned top menu's real height (pinned table headers sit under it).
+(function () {
+  var hdr = document.querySelector("header.chrome");
+  if (!hdr) return;
+  function set() { document.documentElement.style.setProperty("--menu-h", hdr.getBoundingClientRect().height + "px"); }
+  set();
+  if ("ResizeObserver" in window) new ResizeObserver(set).observe(hdr);
+  else window.addEventListener("resize", set);
+})();
