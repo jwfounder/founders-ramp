@@ -12,6 +12,7 @@ Contact: jw@foundersramp.net
 - [Approach](https://www.foundersramp.net/approach/): Build a go-to-market that works
 - [Services](https://www.foundersramp.net/services/): Sales Strategy, Sales Process, Sales Management, Installing the team, Deal and Call Coaching
 - [About](https://www.foundersramp.net/about/): Justin Weller and why Founders Ramp exists
+- [About Justin Weller](https://www.foundersramp.net/about/justin-weller/): Justin Weller has spent about 30 years in enterprise technology sales: Founding Sales Team at Workiva, ADP TotalChoice, Smartsheet, Alpha FMC, Nextel, TSR Wireless and Traq Wireless.
 - [Let me help: book a call with Justin](https://cal.com/justin-weller-nsrjlg/30min)
 
 ## Answers
@@ -19,6 +20,8 @@ Contact: jw@foundersramp.net
 - [When to hire your first AE](https://www.foundersramp.net/answers/when-to-hire-your-first-ae/): When the GTM strategy shows it works and can scale, and you can write down how you qualify, inspect, and advance a deal
 - [How to move off founder-led sales](https://www.foundersramp.net/answers/how-to-move-off-founder-led-sales/): You change roles. Write the motion, hire someone to run it, then step out of the next call
 - [Fractional sales leader vs VP of Sales](https://www.foundersramp.net/answers/fractional-sales-leader-vs-vp-of-sales/): Build the motion before you hire a VP to scale it
+- [What startups pay a founding account executive](https://www.foundersramp.net/answers/founding-ae-salary/): What 11 US startups offered their first sales hire in the week of October 6, 2026: on-target earnings from $140K to $300K, base pay, equity, and deal size, from live postings.
+- [How long does a first sales hire take to pay back?](https://www.foundersramp.net/answers/first-sales-hire-payback/): Three worked examples from the Founders Ramp payback calculator: a first sales hire pays back in 15 to 26 months on closed revenue (gross profit), and 25 to 34 months on cash collected.
 
 ## Tools
 - [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected

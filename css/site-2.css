@@ -58,3 +58,11 @@ footer a { padding: 4px 0; }
   .stage { max-width: 100%; padding: 0; }
   .stage img { width: 100%; max-width: 100%; height: auto; }
 }
+.article-dates { color: var(--muted); font-size: 14px; margin: -4px 0 20px; }
+article.essay .table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 0 20px; border: 1px solid var(--line); }
+article.essay .table-wrap table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article.essay .table-wrap th, article.essay .table-wrap td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+@media (max-width: 640px) { article.essay .table-wrap th, article.essay .table-wrap td { white-space: nowrap; } }
+article.essay .table-wrap th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.hero .summary { max-width: 40rem; margin: 20px 0 12px; }
+.related-links { font-size: 15px; margin: 16px 0; }
