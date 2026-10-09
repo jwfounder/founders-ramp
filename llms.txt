@@ -22,6 +22,7 @@ Contact: jw@foundersramp.net
 
 ## Tools
 - [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected
+- [First Sales Hire Tracker](https://www.foundersramp.net/tracker/): Startups that just posted their first sales job
 
 ## Approach
 - [Self and team](https://www.foundersramp.net/approach/self-team/): You still own it. Then someone else does.
@@ -34,16 +35,16 @@ Contact: jw@foundersramp.net
 
 ## Writings
 - [Repeatable Forecast: 5 Green Fields](https://www.foundersramp.net/writings/five-green-fields): Crushing your forecast is awesome. It also means you need to get better at forecasting.
-- [There is no transition out of sales as a founder](https://www.foundersramp.net/writings/no-transition)
-- [Are you hawking your shiny object?](https://www.foundersramp.net/writings/shiny-object)
-- [Glengarry Glen Ross sales lessons: Part 1](https://www.foundersramp.net/writings/glengarry-glen-ross)
+- [There is no transition out of sales as a founder](https://www.foundersramp.net/writings/no-transition): The roles change. One founder stays the steward of revenue
+- [Are you hawking your shiny object?](https://www.foundersramp.net/writings/shiny-object): A calendar hold is not a deal
+- [Glengarry Glen Ross sales lessons: Part 1](https://www.foundersramp.net/writings/glengarry-glen-ross): The famous lines are not the lessons
 - [Equal commitment](https://www.foundersramp.net/writings/equal-commitment): Match commitment or call the truth early
-- [The first hire freezes the process](https://www.foundersramp.net/writings/first-hire-freezes)
-- [Product-led distribution is an oxymoron](https://www.foundersramp.net/writings/product-distribution)
-- [What are you measuring?](https://www.foundersramp.net/writings/what-are-you-measuring)
-- [Language in business](https://www.foundersramp.net/writings/language-in-business)
-- [SpaceX as ERP strategy](https://www.foundersramp.net/writings/spacex-erp)
-- [From chatbots to agentic procurement](https://www.foundersramp.net/writings/agentic-procurement)
+- [The first hire freezes the process](https://www.foundersramp.net/writings/first-hire-freezes): Hiring your first AE does not fix founder-led sales
+- [Product-led distribution is an oxymoron](https://www.foundersramp.net/writings/product-distribution): The product is necessary. Distribution is decisive
+- [What are you measuring?](https://www.foundersramp.net/writings/what-are-you-measuring): Most sales dashboards measure what already happened
+- [Language in business](https://www.foundersramp.net/writings/language-in-business): Corporatespeak is the Newspeak of our time
+- [SpaceX as ERP strategy](https://www.foundersramp.net/writings/spacex-erp): Most ERP programs re-skin the old process on a new license
+- [From chatbots to agentic procurement](https://www.foundersramp.net/writings/agentic-procurement): Procurement has moved from chatbots that summarize to agents that execute
 - [One person loved the demo. The company never decided.](https://www.foundersramp.net/writings/one-person-loved-the-demo): Name the economic buyer, the champion, and who is hurt if this slips
 - [We already use something for that.](https://www.foundersramp.net/writings/we-already-use-something): Ask what happens after the data leaves that system
 - [Newsroom](https://www.foundersramp.net/briefing/): What operators are sharing
