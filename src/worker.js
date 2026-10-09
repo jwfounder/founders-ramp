@@ -31,7 +31,7 @@ export default {
       url.pathname = "/briefing/";
       return Response.redirect(url.toString(), 301);
     }
-    if (path === "/index.html") {
+    if (path === "/index.html" || path === "/home" || path === "/home/" || path === "/home/index.html") {
       url.pathname = "/";
       return Response.redirect(url.toString(), 301);
     }
@@ -53,6 +53,12 @@ export default {
       response = await env.ASSETS.fetch(new Request(homeUrl.toString(), request));
     } else {
       response = await env.ASSETS.fetch(request);
+    }
+    // Asset routing sends /page.html and /dir to their clean URLs with a 307.
+    // Make those redirects permanent so search engines consolidate on the clean URL.
+    if (response.status === 307) {
+      const loc = response.headers.get("location");
+      if (loc) return Response.redirect(new URL(loc, url).toString(), 301);
     }
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("text/html")) {
