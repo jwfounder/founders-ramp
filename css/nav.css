@@ -3,7 +3,7 @@
 .nav-top { display: inline-flex; align-items: center; gap: 2px; }
 .nav-toggle {
   position: relative; display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 16px; margin: 0; padding: 0; border: 0; background: none;
+  width: 24px; height: 24px; margin: -4px -3px; /* 24px target, same footprint as 18x16 */ padding: 0; border: 0; background: none;
   color: var(--chrome-muted); cursor: pointer;
 }
 .nav-toggle::before {
