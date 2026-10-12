@@ -21,6 +21,17 @@ function withSecurityHeaders(response) {
   return out;
 }
 
+// Old top-level article URLs (e.g. /spacex-erp) moved under /writings/.
+const WRITINGS = new Set(["agentic-procurement", "equal-commitment", "first-hire-freezes", "five-green-fields", "glengarry-glen-ross", "language-in-business", "no-transition", "one-person-loved-the-demo", "product-distribution", "shiny-object", "spacex-erp", "we-already-use-something", "what-are-you-measuring"]);
+
+// Long cache for fingerprinted or rarely changing static files; CSS and JS revalidate hourly.
+function cacheControlFor(path) {
+  if (path.startsWith("/fonts/")) return "public, max-age=31536000, immutable";
+  if (path.startsWith("/assets/")) return "public, max-age=2592000";
+  if (path.startsWith("/css/") || path.startsWith("/js/") || /\.(css|js)$/.test(path)) return "public, max-age=3600";
+  return null;
+}
+
 class DropScript {
   element(element) {
     element.remove();
@@ -29,7 +40,7 @@ class DropScript {
 
 class HeadInjector {
   element(element) {
-    element.append(REB2B, { html: true });
+    element.append('<link rel="preconnect" href="https://ddwl4m2hdecbv.cloudfront.net">' + REB2B, { html: true });
   }
 }
 
@@ -44,6 +55,11 @@ async function handle(request, env) {
     const path = url.pathname;
     if (url.hostname === "foundersramp.net") {
       url.hostname = "www.foundersramp.net";
+      return Response.redirect(url.toString(), 301);
+    }
+    const legacy = path.match(/^\/([a-z0-9-]+)(?:\.html|\/)?$/);
+    if (legacy && WRITINGS.has(legacy[1])) {
+      url.pathname = "/writings/" + legacy[1];
       return Response.redirect(url.toString(), 301);
     }
     if (path === "/newsroom" || path === "/newsroom/") {
@@ -81,6 +97,11 @@ async function handle(request, env) {
     }
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("text/html")) {
+      const cc = response.status === 200 ? cacheControlFor(path) : null;
+      if (cc) {
+        response = new Response(response.body, response);
+        response.headers.set("Cache-Control", cc);
+      }
       return response;
     }
     return new HTMLRewriter()
