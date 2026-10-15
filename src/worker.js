@@ -101,6 +101,7 @@ async function handle(request, env) {
       if (cc) {
         response = new Response(response.body, response);
         response.headers.set("Cache-Control", cc);
+        if (path.startsWith("/assets/social/")) response.headers.set("X-Robots-Tag", "noindex");
       }
       return response;
     }
