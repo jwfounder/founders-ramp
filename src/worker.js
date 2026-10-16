@@ -23,8 +23,8 @@ function withSecurityHeaders(response) {
 
 // Tracked click links: /go/<slug> 302s to a UTM-tagged URL. Add one line per slug.
 const GO_REDIRECTS = {
-  "2026-10-20-li-comment": "https://www.foundersramp.net/writings/five-green-fields?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=li-comment",
-  "2026-10-20-x-reply": "https://www.foundersramp.net/writings/five-green-fields?utm_source=x&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=x-reply",
+  "2026-10-20-li-comment": "https://www.foundersramp.net/writings/five-green-fields?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=comment",
+  "2026-10-20-x-reply": "https://www.foundersramp.net/writings/five-green-fields?utm_source=x&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=reply",
 };
 
 // Old top-level article URLs (e.g. /spacex-erp) moved under /writings/.
