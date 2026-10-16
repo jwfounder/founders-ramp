@@ -21,6 +21,12 @@ function withSecurityHeaders(response) {
   return out;
 }
 
+// Tracked click links: /go/<slug> 302s to a UTM-tagged URL. Add one line per slug.
+const GO_REDIRECTS = {
+  "2026-10-20-li-comment": "https://www.foundersramp.net/writings/five-green-fields?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=li-comment",
+  "2026-10-20-x-reply": "https://www.foundersramp.net/writings/five-green-fields?utm_source=x&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=x-reply",
+};
+
 // Old top-level article URLs (e.g. /spacex-erp) moved under /writings/.
 const WRITINGS = new Set(["agentic-procurement", "equal-commitment", "first-hire-freezes", "five-green-fields", "glengarry-glen-ross", "language-in-business", "no-transition", "one-person-loved-the-demo", "product-distribution", "shiny-object", "spacex-erp", "we-already-use-something", "what-are-you-measuring"]);
 
@@ -56,6 +62,10 @@ async function handle(request, env) {
     if (url.hostname === "foundersramp.net") {
       url.hostname = "www.foundersramp.net";
       return Response.redirect(url.toString(), 301);
+    }
+    const go = path.match(/^\/go\/([a-z0-9-]+)\/?$/);
+    if (go && Object.hasOwn(GO_REDIRECTS, go[1])) {
+      return new Response(null, { status: 302, headers: { location: GO_REDIRECTS[go[1]], "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" } });
     }
     const legacy = path.match(/^\/([a-z0-9-]+)(?:\.html|\/)?$/);
     if (legacy && WRITINGS.has(legacy[1])) {
