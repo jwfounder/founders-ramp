@@ -16,6 +16,7 @@ Contact: jw@foundersramp.net
 - [Let me help: book a call with Justin](https://cal.com/justin-weller-nsrjlg/30min)
 
 ## Answers
+- [Short answers](https://www.foundersramp.net/answers/): Short answers to common founder sales questions.
 - [Questions founders ask](https://www.foundersramp.net/faq/): What Founders Ramp is, who it's for, how an engagement works, and what happens when you click Let me help
 - [When to hire your first AE](https://www.foundersramp.net/answers/when-to-hire-your-first-ae/): When the GTM strategy shows it works and can scale, and you can write down how you qualify, inspect, and advance a deal
 - [Should a founder hire an SDR or an AE first?](https://www.foundersramp.net/answers/sdr-or-ae-first/): Do the job yourself first. When you launch, you are the SDR. Once the funnel fills, let the business decide: a strong lead engine points to an AE, a strong sales process with weak lead generation points to an SDR.
