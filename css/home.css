@@ -67,6 +67,7 @@ body.page-home .picker-list a:hover{border-color:var(--red)}
 body.page-home .picker-list i{font-style:normal;color:var(--red)}
 body.page-home .form-grid,body.page-home .close-grid{display:grid;grid-template-columns:3fr 2fr;gap:56px;align-items:center}
 body.page-home .lead-form{display:grid;grid-template-columns:1fr 1.4fr auto;gap:12px;align-items:end;margin-top:20px}
+body.page-home .lead-form[hidden]{display:none}
 body.page-home .lead-form label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
 body.page-home .lead-form input{font:inherit;font-size:16px;color:var(--ink);padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:0;width:100%}
 body.page-home .lead-form input:focus{outline:2px solid var(--red);outline-offset:1px}
