@@ -46,8 +46,154 @@ class DropScript {
 
 class HeadInjector {
   element(element) {
-    element.append('<link rel="preconnect" href="https://ddwl4m2hdecbv.cloudfront.net">' + REB2B, { html: true });
+    element.append('<link rel="preconnect" href="https://ddwl4m2hdecbv.cloudfront.net">' + REB2B + '<script src="/js/ev.js?v=1" defer></script>', { html: true });
   }
+}
+
+// First-party store for home-form leads and site events (calculator runs, tracker views,
+// booking clicks, /answers/ views). One SQLite-backed Durable Object, FR account only.
+// The box reads it through GET /api/feed with a token whose SHA-256 is below (the token itself
+// lives only on the box). No cookies, no IPs stored.
+const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722adb3dfa6749";
+const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view"]);
+const CAPS_PER_HOUR = { lead: 60, event: 1000 };
+const DAY_MS = 86400000;
+const SITE_ORIGIN = "https://www.foundersramp.net";
+const NO_STORE = { "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" };
+
+export class FrStore {
+  constructor(ctx) {
+    this.ctx = ctx;
+    this.sql = ctx.storage.sql;
+    this.sql.exec("CREATE TABLE IF NOT EXISTS rows (seq INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, at INTEGER NOT NULL, data TEXT NOT NULL)");
+    this.sql.exec("CREATE INDEX IF NOT EXISTS rows_kind_at ON rows (kind, at)");
+    // Daily cleanup alarm: set once on init if none is scheduled; alarm() reschedules itself every 24 hours.
+    ctx.blockConcurrencyWhile(async () => {
+      if ((await ctx.storage.getAlarm()) === null) await ctx.storage.setAlarm(Date.now() + DAY_MS);
+    });
+  }
+  cleanup(now) {
+    this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap') AND at < ?", now - 30 * DAY_MS);
+    this.sql.exec("DELETE FROM rows WHERE kind = 'event' AND at < ?", now - 180 * DAY_MS);
+  }
+  async alarm() {
+    const now = Date.now();
+    this.cleanup(now);
+    await this.ctx.storage.setAlarm(now + DAY_MS);
+  }
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === "POST" && url.pathname === "/add") {
+      const { kind, data } = await request.json();
+      const now = Date.now();
+      const n = this.sql.exec("SELECT COUNT(*) AS n FROM rows WHERE kind = ? AND at > ?", kind, now - 3600000).one().n;
+      if (n >= (CAPS_PER_HOUR[kind] || 0)) {
+        // Cap hit: keep an empty marker (no data) so the box log shows it happened.
+        if (kind === "lead" && this.sql.exec("SELECT COUNT(*) AS n FROM rows WHERE kind = 'cap' AND at > ?", now - 3600000).one().n < 1000) {
+          this.sql.exec("INSERT INTO rows (kind, at, data) VALUES ('cap', ?, '{}')", now);
+        }
+        return Response.json({ ok: false, capped: true });
+      }
+      this.sql.exec("INSERT INTO rows (kind, at, data) VALUES (?, ?, ?)", kind, now, JSON.stringify(data));
+      return Response.json({ ok: true });
+    }
+    if (request.method === "GET" && url.pathname === "/feed") {
+      const after = Math.max(0, parseInt(url.searchParams.get("after") || "0", 10) || 0);
+      const limit = Math.min(500, Math.max(1, parseInt(url.searchParams.get("limit") || "500", 10) || 500));
+      const rows = this.sql.exec("SELECT seq, kind, at, data FROM rows WHERE seq > ? ORDER BY seq LIMIT ?", after, limit).toArray()
+        .map((r) => ({ seq: r.seq, kind: r.kind, at: new Date(r.at).toISOString(), data: JSON.parse(r.data) }));
+      return Response.json({ ok: true, rows });
+    }
+    return new Response("Not found", { status: 404 });
+  }
+}
+
+function store(env) {
+  return env.FR_STORE.get(env.FR_STORE.idFromName("fr"));
+}
+
+function clip(v, n) {
+  return String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, n);
+}
+
+function sameSite(request) {
+  const o = request.headers.get("origin") || request.headers.get("referer") || "";
+  try { return new URL(o).origin === SITE_ORIGIN; } catch { return false; }
+}
+
+function utmFrom(qs) {
+  const out = {};
+  try {
+    const sp = new URLSearchParams(qs || "");
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+      if (sp.get(k)) out[k] = clip(sp.get(k), 100);
+    }
+  } catch {}
+  return out;
+}
+
+async function sha256Hex(text) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function handleLead(request, env) {
+  const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + "/?sent=" + (ok ? "1" : "0") + "#form-h", ...NO_STORE } });
+  if (!sameSite(request)) return back(false);
+  let f;
+  try { f = await request.formData(); } catch { return back(false); }
+  if (clip(f.get("website"), 200)) return back(true); // honeypot: bots fill it, people never see it
+  const email = clip(f.get("email"), 200).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return back(false);
+  let ref = "";
+  try { ref = new URL(request.headers.get("referer") || "").search; } catch {}
+  const data = {
+    email,
+    motion: clip(f.get("motion"), 2000),
+    source: clip(f.get("source"), 40) || "site_form",
+    page: clip(f.get("page"), 40),
+    utm: utmFrom(ref),
+    country: clip(request.cf && request.cf.country, 4),
+  };
+  try {
+    const r = await store(env).fetch("https://fr-store/add", { method: "POST", body: JSON.stringify({ kind: "lead", data }) });
+    const j = r.ok ? await r.json().catch(() => ({})) : {};
+    if (!j.ok) return back(false);
+  } catch {
+    return back(false);
+  }
+  return back(true);
+}
+
+async function handleEvent(request, env) {
+  const done = new Response(null, { status: 204, headers: NO_STORE });
+  if (!sameSite(request)) return done;
+  let b;
+  try { b = JSON.parse((await request.text()).slice(0, 2000)); } catch { return done; }
+  if (!b || !EVENT_NAMES.has(b.n)) return done;
+  const ua = request.headers.get("user-agent") || "";
+  if (/bot|crawl|spider|headless|preview/i.test(ua)) return done;
+  const data = {
+    name: b.n,
+    path: clip(b.p, 200),
+    label: clip(b.l, 120),
+    referrer_host: clip(b.r, 120),
+    utm: utmFrom(b.q),
+    country: clip(request.cf && request.cf.country, 4),
+  };
+  try {
+    await store(env).fetch("https://fr-store/add", { method: "POST", body: JSON.stringify({ kind: "event", data }) });
+  } catch {}
+  return done;
+}
+
+async function handleFeed(request, env, url) {
+  const tok = request.headers.get("x-fr-feed-token") || "";
+  if (!tok || (await sha256Hex(tok)) !== FEED_TOKEN_SHA256) {
+    return new Response("Unauthorized", { status: 401, headers: NO_STORE });
+  }
+  const r = await store(env).fetch("https://fr-store/feed" + url.search);
+  return new Response(r.body, { status: r.status, headers: { "content-type": "application/json", ...NO_STORE } });
 }
 
 // Retired first-party trackers. They used to write every view and gate submit
@@ -84,6 +230,15 @@ async function handle(request, env) {
     if (path === "/.ship-payload" || path.startsWith("/.ship-payload/")) {
       return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
     }
+    if (path === "/api/lead") {
+      if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
+      return handleLead(request, env);
+    }
+    if (path === "/api/event") {
+      if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
+      return handleEvent(request, env);
+    }
+    if (path === "/api/feed" && request.method === "GET") return handleFeed(request, env, url);
     if (
       path === "/api/hit" ||
       path.startsWith("/api/hit/") ||

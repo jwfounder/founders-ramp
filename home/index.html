@@ -176,15 +176,15 @@
     </div>
   </section>
 
-  <section class="home-form sec-white" aria-labelledby="form-h" hidden>
+  <section class="home-form sec-white" aria-labelledby="form-h">
     <div class="wrap form-grid">
       <div>
         <p class="kicker">Not ready to book?</p>
         <h2 id="form-h">Tell us how we can help.</h2>
-        <form class="lead-form" action="#" method="post" data-lead-form="off" novalidate>
+        <form class="lead-form" action="/api/lead" method="post" data-lead-form="on">
           <label>Work email<input type="email" name="email" required autocomplete="email" placeholder="you@company.com"></label>
           <label>What do you need?<input type="text" name="motion" placeholder="One line is fine"></label>
-          <input type="hidden" name="source" value="site_form"><input type="hidden" name="page" value="home">
+          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="site_form"><input type="hidden" name="page" value="home">
           <button type="submit" class="btn">Send</button>
         </form>
       </div>
@@ -230,7 +230,7 @@
       <div><a href="mailto:jw@foundersramp.net">jw@foundersramp.net</a> · <a href="/faq/">FAQ</a></div>
     </div>
   </footer>
-  <script src="/js/lead-form.js?v=1" defer></script>
+  <script src="/js/lead-form.js?v=3" defer></script>
   <script src="/js/nav.js?v=nav2" defer></script>
 </body>
 </html>
