@@ -165,10 +165,10 @@ async function tokenMatches(presented, expectedHex) {
   return crypto.subtle.timingSafeEqual(got, hexBytes(expectedHex));
 }
 
-// One @; local part without whitespace, control characters or < > " ' ` ( ) , ; : \ [ ] |;
-// domain = dot-separated labels of letters, digits and hyphens, ending in a TLD of 2+ letters.
-// Stops Slack control text such as a@<!channel>.com reaching the lead alert.
-const EMAIL_OK = /^[^\s<>"'`(),;:\\\[\]|@\u0000-\u001f\u007f]+@(?:[a-z0-9-]+\.)+[a-z]{2,}$/i;
+// One @; local part without whitespace, control or zero-width characters, or < > " ` ( ) , ; : \ [ ] |
+// (apostrophes are fine: o'brien@company.com); domain = dot-separated labels of letters, digits and hyphens,
+// ending in a TLD of 2+ letters or a punycode TLD (xn--...). Stops Slack control text such as a@<!channel>.com.
+const EMAIL_OK = /^[^\s<>"`(),;:\\\[\]|@\u0000-\u001f\u007f\u200b-\u200d\u2060\ufeff]+@(?:[a-z0-9-]+\.)+(?:[a-z]{2,}|xn--[a-z0-9-]{2,})$/i;
 
 async function handleLead(request, env) {
   const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + "/?sent=" + (ok ? "1" : "0") + "#form-h", ...NO_STORE } });
