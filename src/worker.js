@@ -25,6 +25,8 @@ function withSecurityHeaders(response) {
 const GO_REDIRECTS = {
   "2026-10-20-li-comment": "https://www.foundersramp.net/writings/five-green-fields?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=comment",
   "2026-10-20-x-reply": "https://www.foundersramp.net/writings/five-green-fields?utm_source=x&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=reply",
+  "2026-10-22-li-jobs": "https://www.foundersramp.net/tracker/?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-22-jobs&utm_content=comment",
+  "2026-10-22-x-jobs": "https://www.foundersramp.net/tracker/?utm_source=x&utm_medium=social&utm_campaign=2026-10-22-jobs&utm_content=reply",
 };
 
 // Old top-level article URLs (e.g. /spacex-erp) moved under /writings/.
