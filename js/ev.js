@@ -19,8 +19,11 @@
     calc.addEventListener("input", once);
     calc.addEventListener("change", once);
   }
-  document.addEventListener("click", function (e) {
+  function book(e) {
+    if (e.type === "auxclick" && e.button !== 1) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href*="cal.com/"]') : null;
     if (a) send("book_click", (a.textContent || "").replace(/\s+/g, " ").trim().slice(0, 120));
-  }, true);
+  }
+  document.addEventListener("click", book, true);
+  document.addEventListener("auxclick", book, true);
 })();
