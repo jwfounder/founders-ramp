@@ -222,7 +222,7 @@ async function handleEvent(request, env) {
     name: b.n,
     path: clip(b.p, 200),
     label: clip(b.l, 120),
-    referrer_host: clip(b.r, 120),
+    referrer_host: hostFrom(b.r),
     utm: utmFrom(b.q),
     ref: refFrom("", b.q),
     country: clip(request.cf && request.cf.country, 4),
