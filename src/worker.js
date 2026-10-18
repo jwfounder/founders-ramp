@@ -21,13 +21,23 @@ function withSecurityHeaders(response) {
   return out;
 }
 
-// Tracked click links: /go/<slug> 302s to a UTM-tagged URL. Add one line per slug.
+// Tracked click links: /go/<slug> 302s to a fixed destination and counts the click (event "go_click").
+// Only slugs listed here exist, and each destination must start with one of GO_ALLOWED_PREFIXES (checked at
+// request time and in tests/worker.test.mjs), so /go/ is never an open redirect. Add one line per slug.
+// Incoming utm_* (the five below) and a valid ?ref= are passed on, unless the destination already sets that key.
 const GO_REDIRECTS = {
+  "book": "https://cal.com/justin-weller-nsrjlg/30min",
+  "calculator": "https://www.foundersramp.net/tools/first-hire-payback/",
   "2026-10-20-li-comment": "https://www.foundersramp.net/writings/five-green-fields?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=comment",
   "2026-10-20-x-reply": "https://www.foundersramp.net/writings/five-green-fields?utm_source=x&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=reply",
   "2026-10-22-li-jobs": "https://www.foundersramp.net/tracker/?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-22-jobs&utm_content=comment",
   "2026-10-22-x-jobs": "https://www.foundersramp.net/tracker/?utm_source=x&utm_medium=social&utm_campaign=2026-10-22-jobs&utm_content=reply",
 };
+
+const GO_ALLOWED_PREFIXES = ["https://www.foundersramp.net/", "https://cal.com/justin-weller-nsrjlg/"];
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+// Link unfurlers and scripts fetch /go/ links without a person clicking; those still redirect but are not counted.
+const GO_SKIP_UA = /bot|crawl|spider|headless|preview|facebookexternalhit|embedly|whatsapp|slack|discord|telegram|skype|curl|wget|python|go-http|node-fetch|okhttp|axios/i;
 
 // Old top-level article URLs (e.g. /spacex-erp) moved under /writings/.
 const WRITINGS = new Set(["agentic-procurement", "equal-commitment", "first-hire-freezes", "five-green-fields", "glengarry-glen-ross", "language-in-business", "no-transition", "one-person-loved-the-demo", "product-distribution", "shiny-object", "spacex-erp", "we-already-use-something", "what-are-you-measuring"]);
@@ -60,7 +70,7 @@ const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722
 // POST/DELETE /api/feed/delete takes a separate admin token (x-fr-admin-token). Same pattern: only its SHA-256
 // is here; the token itself lives only on the box.
 const FEED_ADMIN_TOKEN_SHA256 = "a34d6de3ee82cd54006b3b47dd1153c57d636a48ac9db3046827918df8e3e535";
-const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view"]);
+const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view", "landing"]);
 const CAPS_PER_HOUR = { lead: 60, event: 1000 };
 const DAY_MS = 86400000;
 const SITE_ORIGIN = "https://www.foundersramp.net";
@@ -140,11 +150,74 @@ function utmFrom(qs) {
   const out = {};
   try {
     const sp = new URLSearchParams(qs || "");
-    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+    for (const k of UTM_KEYS) {
       if (sp.get(k)) out[k] = clip(sp.get(k), 100);
     }
   } catch {}
   return out;
+}
+
+// Partner tag from a ?ref= link (e.g. /?ref=acme-cfo): lowercase letters, digits, - and _, max 40. Anything else is dropped.
+function refFrom(field, qs) {
+  let v = String(field == null ? "" : field);
+  if (!v) { try { v = new URLSearchParams(qs || "").get("ref") || ""; } catch {} }
+  v = v.trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9_-]{0,39}$/.test(v) ? v : "";
+}
+
+// Referrer host only (never a path or query); our own hosts count as no referrer.
+function hostFrom(v) {
+  const h = String(v == null ? "" : v).trim().toLowerCase();
+  if (h.length > 120 || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(h)) return "";
+  return /(^|\.)foundersramp\.net$/.test(h) ? "" : h;
+}
+
+// /go/ destination: the listed URL, plus incoming utm_* / ref the URL does not already set. With nothing to add
+// it returns the listed URL byte for byte.
+function goTarget(slug) {
+  if (!Object.hasOwn(GO_REDIRECTS, slug)) return null;
+  const t = GO_REDIRECTS[slug];
+  return GO_ALLOWED_PREFIXES.some((p) => t.startsWith(p)) ? t : null;
+}
+function goLocation(target, qs) {
+  const hashAt = target.indexOf("#");
+  const base = hashAt < 0 ? target : target.slice(0, hashAt);
+  const hash = hashAt < 0 ? "" : target.slice(hashAt);
+  const qAt = base.indexOf("?");
+  const have = new URLSearchParams(qAt < 0 ? "" : base.slice(qAt + 1));
+  const add = new URLSearchParams();
+  let sp;
+  try { sp = new URLSearchParams(qs || ""); } catch { return target; }
+  for (const k of UTM_KEYS) {
+    const v = clip(sp.get(k), 100);
+    if (v && !have.has(k)) add.set(k, v);
+  }
+  const ref = refFrom("", qs);
+  if (ref && !have.has("ref")) add.set("ref", ref);
+  const extra = add.toString();
+  if (!extra) return target;
+  return base + (qAt < 0 ? "?" : "&") + extra + hash;
+}
+async function countGo(request, env, slug, location) {
+  if (request.method !== "GET") return;
+  const purpose = (request.headers.get("sec-purpose") || request.headers.get("purpose") || "").toLowerCase();
+  if (purpose.includes("prefetch") || purpose.includes("prerender")) return;
+  const ua = request.headers.get("user-agent") || "";
+  if (!ua || GO_SKIP_UA.test(ua)) return;
+  let rh = "";
+  try { rh = new URL(request.headers.get("referer") || "").hostname; } catch {}
+  let qs = "";
+  try { qs = new URL(location).search; } catch {}
+  const data = {
+    name: "go_click",
+    path: "/go/" + slug,
+    label: slug,
+    referrer_host: hostFrom(rh),
+    utm: utmFrom(qs),
+    ref: refFrom("", qs),
+    country: clip(request.cf && request.cf.country, 4),
+  };
+  await store(env).fetch("https://fr-store/add", { method: "POST", body: JSON.stringify({ kind: "event", data }) });
 }
 
 async function sha256Hex(text) {
@@ -181,6 +254,8 @@ async function handleLead(request, env) {
     source: clip(f.get("source"), 40) || "site_form",
     page: clip(f.get("page"), 40),
     utm: utmFrom(ref),
+    ref: refFrom(f.get("ref"), ref),
+    referrer_host: hostFrom(f.get("rh")),
     country: clip(request.cf && request.cf.country, 4),
   };
   try {
@@ -205,8 +280,9 @@ async function handleEvent(request, env) {
     name: b.n,
     path: clip(b.p, 200),
     label: clip(b.l, 120),
-    referrer_host: clip(b.r, 120),
+    referrer_host: hostFrom(b.r),
     utm: utmFrom(b.q),
+    ref: refFrom("", b.q),
     country: clip(request.cf && request.cf.country, 4),
   };
   try {
@@ -241,7 +317,7 @@ function retired() {
   return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
 }
 
-async function handle(request, env) {
+async function handle(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     if (url.hostname === "foundersramp.net") {
@@ -249,8 +325,12 @@ async function handle(request, env) {
       return Response.redirect(url.toString(), 301);
     }
     const go = path.match(/^\/go\/([a-z0-9-]+)\/?$/);
-    if (go && Object.hasOwn(GO_REDIRECTS, go[1])) {
-      return new Response(null, { status: 302, headers: { location: GO_REDIRECTS[go[1]], "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" } });
+    const goTo = go ? goTarget(go[1]) : null;
+    if (goTo) {
+      const location = goLocation(goTo, url.search);
+      const counted = countGo(request, env, go[1], location).catch(() => {});
+      if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(counted); else await counted;
+      return new Response(null, { status: 302, headers: { location, "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" } });
     }
     const legacy = path.match(/^\/([a-z0-9-]+)(?:\.html|\/)?$/);
     if (legacy && WRITINGS.has(legacy[1])) {
@@ -321,7 +401,7 @@ async function handle(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
-    return withSecurityHeaders(await handle(request, env));
+  async fetch(request, env, ctx) {
+    return withSecurityHeaders(await handle(request, env, ctx));
   },
 };
