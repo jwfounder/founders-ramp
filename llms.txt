@@ -25,6 +25,9 @@ Contact: jw@foundersramp.net
 - [Fractional sales leader vs VP of Sales](https://www.foundersramp.net/answers/fractional-sales-leader-vs-vp-of-sales/): Build the motion before you hire a VP to scale it
 - [What startups pay a founding account executive](https://www.foundersramp.net/answers/founding-ae-salary/): What 8 US startups offered their first sales hire in the week of October 15, 2026: on-target earnings from $140K to $300K, base pay, equity, and deal size, from live postings.
 - [How long does a first sales hire take to pay back?](https://www.foundersramp.net/answers/first-sales-hire-payback/): Three worked examples from the Founders Ramp payback calculator: a first sales hire pays back in 15 to 26 months on closed revenue (gross profit), and 25 to 34 months on cash collected.
+- [What should a founder do on the first sales call?](https://www.foundersramp.net/answers/first-sales-call/): Find out why they would buy. Name the usual reasons companies buy something like yours, ask which is top of mind, and leave with a next step they own.
+- [How should a startup run its first enterprise pilot?](https://www.foundersramp.net/answers/first-enterprise-pilot/): Run a pilot only after the buyer has decided you are the right answer. A pilot is a trial, and trials do not sell things. They confirm what the buyer already thought.
+- [When should a startup bring up pricing with an enterprise buyer?](https://www.foundersramp.net/answers/when-to-talk-pricing/): Not first. The first deck an executive sees should say why their company needs to fix the problem. A deck that jumps from features to pricing has the order wrong.
 
 ## Tools
 - [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected
