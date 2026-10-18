@@ -28,7 +28,7 @@ Contact: jw@foundersramp.net
 
 ## Tools
 - [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected
-- [First Sales Hire Tracker](https://www.foundersramp.net/tracker/): Startups that just posted their first sales job
+- [First Sales Hire Tracker](https://www.foundersramp.net/tracker/): Startups that posted their first sales job
 
 ## Approach
 - [Self and team](https://www.foundersramp.net/approach/self-team/): You still own it. Then someone else does.
