@@ -57,14 +57,29 @@ class HeadInjector {
 const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722adb3dfa6749";
 const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view"]);
 const CAPS_PER_HOUR = { lead: 60, event: 1000 };
+const DAY_MS = 86400000;
 const SITE_ORIGIN = "https://www.foundersramp.net";
 const NO_STORE = { "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" };
 
 export class FrStore {
   constructor(ctx) {
+    this.ctx = ctx;
     this.sql = ctx.storage.sql;
     this.sql.exec("CREATE TABLE IF NOT EXISTS rows (seq INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, at INTEGER NOT NULL, data TEXT NOT NULL)");
     this.sql.exec("CREATE INDEX IF NOT EXISTS rows_kind_at ON rows (kind, at)");
+    // Daily cleanup alarm: set once on init if none is scheduled; alarm() reschedules itself every 24 hours.
+    ctx.blockConcurrencyWhile(async () => {
+      if ((await ctx.storage.getAlarm()) === null) await ctx.storage.setAlarm(Date.now() + DAY_MS);
+    });
+  }
+  cleanup(now) {
+    this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap') AND at < ?", now - 30 * DAY_MS);
+    this.sql.exec("DELETE FROM rows WHERE kind = 'event' AND at < ?", now - 180 * DAY_MS);
+  }
+  async alarm() {
+    const now = Date.now();
+    this.cleanup(now);
+    await this.ctx.storage.setAlarm(now + DAY_MS);
   }
   async fetch(request) {
     const url = new URL(request.url);
@@ -80,10 +95,6 @@ export class FrStore {
         return Response.json({ ok: false, capped: true });
       }
       this.sql.exec("INSERT INTO rows (kind, at, data) VALUES (?, ?, ?)", kind, now, JSON.stringify(data));
-      if (Math.random() < 0.01) {
-        this.sql.exec("DELETE FROM rows WHERE kind = 'event' AND at < ?", now - 180 * 86400000);
-        this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap') AND at < ?", now - 30 * 86400000);
-      }
       return Response.json({ ok: true });
     }
     if (request.method === "GET" && url.pathname === "/feed") {
