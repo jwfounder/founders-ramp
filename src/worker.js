@@ -165,6 +165,11 @@ async function tokenMatches(presented, expectedHex) {
   return crypto.subtle.timingSafeEqual(got, hexBytes(expectedHex));
 }
 
+// One @; local part without whitespace, control characters or < > " ' ` ( ) , ; : \ [ ] |;
+// domain = dot-separated labels of letters, digits and hyphens, ending in a TLD of 2+ letters.
+// Stops Slack control text such as a@<!channel>.com reaching the lead alert.
+const EMAIL_OK = /^[^\s<>"'`(),;:\\\[\]|@\u0000-\u001f\u007f]+@(?:[a-z0-9-]+\.)+[a-z]{2,}$/i;
+
 async function handleLead(request, env) {
   const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + "/?sent=" + (ok ? "1" : "0") + "#form-h", ...NO_STORE } });
   if (!sameSite(request)) return back(false);
@@ -172,7 +177,7 @@ async function handleLead(request, env) {
   try { f = await request.formData(); } catch { return back(false); }
   if (clip(f.get("website"), 200)) return back(true); // honeypot: bots fill it, people never see it
   const email = clip(f.get("email"), 200).toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return back(false);
+  if (!EMAIL_OK.test(email)) return back(false);
   let ref = "";
   try { ref = new URL(request.headers.get("referer") || "").search; } catch {}
   const data = {
