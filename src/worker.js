@@ -56,7 +56,7 @@ class HeadInjector {
 // lives only on the box). No cookies, no IPs stored.
 const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722adb3dfa6749";
 const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view"]);
-const CAPS_PER_HOUR = { lead: 60, event: 3000 };
+const CAPS_PER_HOUR = { lead: 60, event: 1000 };
 const SITE_ORIGIN = "https://www.foundersramp.net";
 const NO_STORE = { "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" };
 
@@ -72,9 +72,18 @@ export class FrStore {
       const { kind, data } = await request.json();
       const now = Date.now();
       const n = this.sql.exec("SELECT COUNT(*) AS n FROM rows WHERE kind = ? AND at > ?", kind, now - 3600000).one().n;
-      if (n >= (CAPS_PER_HOUR[kind] || 0)) return Response.json({ ok: false, capped: true });
+      if (n >= (CAPS_PER_HOUR[kind] || 0)) {
+        // Cap hit: keep an empty marker (no data) so the box log shows it happened.
+        if (kind === "lead" && this.sql.exec("SELECT COUNT(*) AS n FROM rows WHERE kind = 'cap' AND at > ?", now - 3600000).one().n < 1000) {
+          this.sql.exec("INSERT INTO rows (kind, at, data) VALUES ('cap', ?, '{}')", now);
+        }
+        return Response.json({ ok: false, capped: true });
+      }
       this.sql.exec("INSERT INTO rows (kind, at, data) VALUES (?, ?, ?)", kind, now, JSON.stringify(data));
-      if (Math.random() < 0.01) this.sql.exec("DELETE FROM rows WHERE kind = 'event' AND at < ?", now - 180 * 86400000);
+      if (Math.random() < 0.01) {
+        this.sql.exec("DELETE FROM rows WHERE kind = 'event' AND at < ?", now - 180 * 86400000);
+        this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap') AND at < ?", now - 30 * 86400000);
+      }
       return Response.json({ ok: true });
     }
     if (request.method === "GET" && url.pathname === "/feed") {
@@ -136,7 +145,9 @@ async function handleLead(request, env) {
     country: clip(request.cf && request.cf.country, 4),
   };
   try {
-    await store(env).fetch("https://fr-store/add", { method: "POST", body: JSON.stringify({ kind: "lead", data }) });
+    const r = await store(env).fetch("https://fr-store/add", { method: "POST", body: JSON.stringify({ kind: "lead", data }) });
+    const j = r.ok ? await r.json().catch(() => ({})) : {};
+    if (!j.ok) return back(false);
   } catch {
     return back(false);
   }
