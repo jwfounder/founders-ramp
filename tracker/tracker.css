@@ -51,5 +51,6 @@ body.page-tracker .hero .table-wrap table { border-collapse: collapse; width: 10
 body.page-tracker .hero .table-wrap caption { text-align: left; font-size: 13px; color: var(--muted); padding: 8px 10px 0; }
 body.page-tracker .hero .table-wrap th, body.page-tracker .hero .table-wrap td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 @media (max-width: 640px) { body.page-tracker .hero .table-wrap th, body.page-tracker .hero .table-wrap td { white-space: normal; min-width: 7em; } }
-body.page-tracker .hero .table-wrap thead th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+/* All header cells (column and row) match the answer-page .table-wrap th style. */
+body.page-tracker .hero .table-wrap th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
 body.page-tracker .hero .fr-asof { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
