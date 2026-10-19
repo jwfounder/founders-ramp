@@ -1,10 +1,11 @@
 # Founders Ramp
-> Justin Weller helps founders build a repeatable go-to-market strategy that leads to exponential growth.
+> Founders Ramp helps founders build a repeatable way to sell before they hire sellers.
 
-Founders Ramp (no apostrophe) is run by Justin Weller, an enterprise software seller and sales leader who was on Workiva's original sales team. It's for founders and launch teams who still own the pipeline, whether they have no sellers, one seller, or five. We aren't their VP. The way in is simple: bring one issue or one deal, and we'll work it together and set a game plan.
+Founders Ramp (no apostrophe) is run by Justin Weller, an enterprise software seller and sales leader who was on the Founding Sales Team at Workiva. It's for founders and launch teams who still own the pipeline, whether they have no sellers, one seller, or five. We aren't their VP. The way in is simple: bring one issue or one deal, and we'll work it together and set a game plan.
 
-Crunchbase: https://www.crunchbase.com/organization/founders-ramp
-LinkedIn: https://www.linkedin.com/in/jweller
+Justin Weller on LinkedIn: https://www.linkedin.com/in/jweller
+Founders Ramp on LinkedIn: https://www.linkedin.com/company/foundersramp
+X: https://x.com/FoundersRamp
 Contact: jw@foundersramp.net
 
 ## Start here
@@ -22,12 +23,12 @@ Contact: jw@foundersramp.net
 - [Should a founder hire an SDR or an AE first?](https://www.foundersramp.net/answers/sdr-or-ae-first/): Do the job yourself first. When you launch, you are the SDR. Once the funnel fills, let the business decide: a strong lead engine points to an AE, a strong sales process with weak lead generation points to an SDR.
 - [How to move off founder-led sales](https://www.foundersramp.net/answers/how-to-move-off-founder-led-sales/): You change roles. Write the motion, hire someone to run it, then step out of the next call
 - [Fractional sales leader vs VP of Sales](https://www.foundersramp.net/answers/fractional-sales-leader-vs-vp-of-sales/): Build the motion before you hire a VP to scale it
-- [What startups pay a founding account executive](https://www.foundersramp.net/answers/founding-ae-salary/): What 8 US startups offered their first sales hire in the week of October 15, 2026: on-target earnings from $140K to $300K, base pay, equity, and deal size, from live postings.
+- [What startups pay a founding account executive](https://www.foundersramp.net/answers/founding-ae-salary/): What 13 US startups offered their first sales hire in the week of October 19, 2026: on-target earnings from $240K to $300K among the 3 postings that state it, base pay, equity, and deal size, from live postings.
 - [How long does a first sales hire take to pay back?](https://www.foundersramp.net/answers/first-sales-hire-payback/): Three worked examples from the Founders Ramp payback calculator: a first sales hire pays back in 15 to 26 months on closed revenue (gross profit), and 25 to 34 months on cash collected.
 
 ## Tools
 - [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected
-- [First Sales Hire Tracker](https://www.foundersramp.net/tracker/): Startups that just posted their first sales job
+- [First Sales Hire Tracker](https://www.foundersramp.net/tracker/): Startups that posted their first sales job
 
 ## Approach
 - [Self and team](https://www.foundersramp.net/approach/self-team/): You still own it. Then someone else does.

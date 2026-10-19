@@ -57,6 +57,9 @@ class HeadInjector {
 // The box reads it through GET /api/feed with a token whose SHA-256 is below (the token itself
 // lives only on the box). No cookies, no IPs stored.
 const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722adb3dfa6749";
+// POST/DELETE /api/feed/delete takes a separate admin token (x-fr-admin-token). Same pattern: only its SHA-256
+// is here; the token itself lives only on the box.
+const FEED_ADMIN_TOKEN_SHA256 = "a34d6de3ee82cd54006b3b47dd1153c57d636a48ac9db3046827918df8e3e535";
 const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view"]);
 const CAPS_PER_HOUR = { lead: 60, event: 1000 };
 const DAY_MS = 86400000;
@@ -106,6 +109,16 @@ export class FrStore {
         .map((r) => ({ seq: r.seq, kind: r.kind, at: new Date(r.at).toISOString(), data: JSON.parse(r.data) }));
       return Response.json({ ok: true, rows });
     }
+    if (request.method === "POST" && url.pathname === "/delete") {
+      // Deletion on request: remove the one row with this seq, whatever its kind (lead, event or cap marker).
+      // seq is AUTOINCREMENT, so a deleted seq is never reused.
+      const seq = parseInt(url.searchParams.get("seq") || "", 10);
+      const found = this.sql.exec("SELECT kind, COUNT(*) AS n FROM rows WHERE seq = ? GROUP BY kind", seq).toArray();
+      if (!found.length) return Response.json({ ok: false, seq, deleted: 0 }, { status: 404 });
+      this.sql.exec("DELETE FROM rows WHERE seq = ?", seq);
+      const kinds = Object.fromEntries(found.map((r) => [r.kind, r.n]));
+      return Response.json({ ok: true, seq, deleted: found.reduce((a, r) => a + r.n, 0), kinds });
+    }
     return new Response("Not found", { status: 404 });
   }
 }
@@ -139,6 +152,24 @@ async function sha256Hex(text) {
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// Constant-time check of a presented token against a stored SHA-256 (hex). The presented token is hashed to
+// 32 bytes and compared with crypto.subtle.timingSafeEqual, so timing never depends on where they differ.
+function hexBytes(hex) {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+async function tokenMatches(presented, expectedHex) {
+  if (!presented || typeof expectedHex !== "string" || !/^[0-9a-f]{64}$/.test(expectedHex)) return false;
+  const got = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(presented)));
+  return crypto.subtle.timingSafeEqual(got, hexBytes(expectedHex));
+}
+
+// One @; local part without whitespace, control or zero-width characters, or < > " ` ( ) , ; : \ [ ] |
+// (apostrophes are fine: o'brien@company.com); domain = dot-separated labels of letters, digits and hyphens,
+// ending in a TLD of 2+ letters or a punycode TLD (xn--...). Stops Slack control text such as a@<!channel>.com.
+const EMAIL_OK = /^[^\s<>"`(),;:\\\[\]|@\u0000-\u001f\u007f\u200b-\u200d\u2060\ufeff]+@(?:[a-z0-9-]+\.)+(?:[a-z]{2,}|xn--[a-z0-9-]{2,})$/i;
+
 async function handleLead(request, env) {
   const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + "/?sent=" + (ok ? "1" : "0") + "#form-h", ...NO_STORE } });
   if (!sameSite(request)) return back(false);
@@ -146,7 +177,7 @@ async function handleLead(request, env) {
   try { f = await request.formData(); } catch { return back(false); }
   if (clip(f.get("website"), 200)) return back(true); // honeypot: bots fill it, people never see it
   const email = clip(f.get("email"), 200).toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return back(false);
+  if (!EMAIL_OK.test(email)) return back(false);
   let ref = "";
   try { ref = new URL(request.headers.get("referer") || "").search; } catch {}
   const data = {
@@ -198,6 +229,17 @@ async function handleFeed(request, env, url) {
   return new Response(r.body, { status: r.status, headers: { "content-type": "application/json", ...NO_STORE } });
 }
 
+// POST or DELETE /api/feed/delete?seq=N with header x-fr-admin-token (checked against FEED_ADMIN_TOKEN_SHA256).
+async function handleFeedDelete(request, env, url) {
+  if (!(await tokenMatches(request.headers.get("x-fr-admin-token") || "", FEED_ADMIN_TOKEN_SHA256))) {
+    return new Response("Unauthorized", { status: 401, headers: NO_STORE });
+  }
+  const raw = url.searchParams.get("seq") || "";
+  if (!/^[1-9][0-9]{0,15}$/.test(raw)) return Response.json({ ok: false, error: "seq must be a positive integer" }, { status: 400, headers: NO_STORE });
+  const r = await store(env).fetch("https://fr-store/delete?seq=" + raw, { method: "POST" });
+  return new Response(r.body, { status: r.status, headers: { "content-type": "application/json", ...NO_STORE } });
+}
+
 // Retired first-party trackers. They used to write every view and gate submit
 // into DNS as TXT records. Answer 204 and write nothing so cached pages don't error.
 function retired() {
@@ -220,7 +262,7 @@ async function handle(request, env) {
       url.pathname = "/writings/" + legacy[1];
       return Response.redirect(url.toString(), 301);
     }
-    if (path === "/newsroom" || path === "/newsroom/") {
+    if (path === "/newsroom" || path === "/newsroom/" || path === "/news" || path === "/news/") {
       url.pathname = "/briefing/";
       return Response.redirect(url.toString(), 301);
     }
@@ -241,6 +283,10 @@ async function handle(request, env) {
       return handleEvent(request, env);
     }
     if (path === "/api/feed" && request.method === "GET") return handleFeed(request, env, url);
+    if (path === "/api/feed/delete") {
+      if (request.method !== "POST" && request.method !== "DELETE") return new Response("Method not allowed", { status: 405, headers: { allow: "POST, DELETE", ...NO_STORE } });
+      return handleFeedDelete(request, env, url);
+    }
     if (
       path === "/api/hit" ||
       path.startsWith("/api/hit/") ||
