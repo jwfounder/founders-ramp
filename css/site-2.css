@@ -64,5 +64,8 @@ article.essay .table-wrap table { border-collapse: collapse; width: 100%; font-s
 article.essay .table-wrap th, article.essay .table-wrap td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 @media (max-width: 640px) { article.essay .table-wrap th, article.essay .table-wrap td { white-space: nowrap; } }
 article.essay .table-wrap th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+article.essay .table-wrap caption { text-align: left; font-size: 13px; color: var(--muted); padding: 8px 10px 0; }
+/* Short text tables (two or three columns of words): let cells wrap on phones instead of scrolling. */
+@media (max-width: 640px) { article.essay .table-wrap.table-text th, article.essay .table-wrap.table-text td { white-space: normal; min-width: 7em; } }
 .hero .summary { max-width: 40rem; margin: 20px 0 12px; }
 .related-links { font-size: 15px; margin: 16px 0; }
