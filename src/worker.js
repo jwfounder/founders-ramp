@@ -262,7 +262,7 @@ async function handle(request, env) {
       url.pathname = "/writings/" + legacy[1];
       return Response.redirect(url.toString(), 301);
     }
-    if (path === "/newsroom" || path === "/newsroom/") {
+    if (path === "/newsroom" || path === "/newsroom/" || path === "/news" || path === "/news/") {
       url.pathname = "/briefing/";
       return Response.redirect(url.toString(), 301);
     }
