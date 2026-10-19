@@ -43,3 +43,14 @@ table.tracker .what { display: block; color: var(--muted); font-size: 14px; marg
   }
   table.tracker td:first-child::before { display: none; }
 }
+/* Number-first hero: subhead under the H1, and the summary table in the same .table-wrap pattern as answer pages. */
+body.page-tracker .hero .subhead { font-size: 22px; line-height: 1.3; color: var(--ink); max-width: 42rem; margin: -8px 0 16px; }
+body.page-tracker .hero .summary p + p { margin-top: 10px; }
+body.page-tracker .hero .table-wrap { max-width: 40rem; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 0 8px; border: 1px solid var(--line); background: var(--bg-2); }
+body.page-tracker .hero .table-wrap table { border-collapse: collapse; width: 100%; font-size: 14px; }
+body.page-tracker .hero .table-wrap caption { text-align: left; font-size: 13px; color: var(--muted); padding: 8px 10px 0; }
+body.page-tracker .hero .table-wrap th, body.page-tracker .hero .table-wrap td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+@media (max-width: 640px) { body.page-tracker .hero .table-wrap th, body.page-tracker .hero .table-wrap td { white-space: normal; min-width: 7em; } }
+/* All header cells (column and row) match the answer-page .table-wrap th style. */
+body.page-tracker .hero .table-wrap th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+body.page-tracker .hero .fr-asof { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
