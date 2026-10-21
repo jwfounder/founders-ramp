@@ -146,6 +146,7 @@ export async function firstSellerSignup(env, email) {
     // Existing contact (subscribed or unsubscribed) = already welcomed or opted out: never send again,
     // and never POST /contacts for it (that could flip unsubscribed back to false).
     const cur = await call(env, `/contacts/${encodeURIComponent(email)}`, undefined, { method: "GET" });
+    if (cur.ok && !(cur.json && cur.json.unsubscribed)) console.log("first_seller: skipped exists");
     if (cur.ok) return { skipped: cur.json && cur.json.unsubscribed ? "unsubscribed" : "exists" };
     if (cur.status !== 404) { console.log("first_seller: contact lookup failed", cur.status); return { skipped: "lookup_failed", status: cur.status }; }
     const c = await call(env, "/contacts", { email, unsubscribed: false, segments: [{ id: env.RESEND_AUDIENCE_ID }] });
