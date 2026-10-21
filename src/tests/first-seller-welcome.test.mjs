@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { firstSellerSignup, sendWelcome, drainRetries, buildWelcome, assertNoPlaceholder, handleUnsubscribe, unsubUrl, WELCOME_FROM, WELCOME_REPLY_TO, DAILY_SEND_CAP } from "../email/resend.js";
+import { firstSellerSignup, sendWelcome, drainRetries, retryDelayMs, buildWelcome, assertNoPlaceholder, handleUnsubscribe, unsubUrl, WELCOME_FROM, WELCOME_REPLY_TO, DAILY_SEND_CAP } from "../email/resend.js";
 import { WELCOME_SUBJECT, WELCOME_PREVIEW, WELCOME_TEXT } from "../email/first-seller-welcome.js";
 
 // Fake Resend + fake FrStore slot counter.
@@ -16,13 +16,16 @@ globalThis.fetch = async (u, o = {}) => {
   return j({}, 404);
 };
 // Fake FrStore: send slots + retry queue (same contract as the Durable Object routes).
+let clock = 0; const later = () => { clock += 13 * 3600000; }; // jump past any backoff/lease
 let queue = new Map(); // email -> {tries, why}
 const FR_STORE = { idFromName: () => 1, get: () => ({ fetch: async (u, o = {}) => {
   const p = new URL(u).pathname, b = o.body ? JSON.parse(o.body) : {}, J = (x) => new Response(JSON.stringify(x));
   if (p === "/welcome-slot") return J({ ok: ++slots <= DAILY_SEND_CAP });
   if (p === "/welcome-retry/add") { const q = queue.get(b.email) || { tries: 0 }; q.tries += b.why === "cap" ? 0 : 1; q.why = b.why;
+    q.due = b.why === "cap" ? clock : clock + retryDelayMs(q.tries);
     if (q.tries > 5) { queue.delete(b.email); return J({ ok: false, reason: "gave up after 5 tries" }); } queue.set(b.email, q); return J({ ok: true, tries: q.tries }); }
-  if (p === "/welcome-retry/take") return J({ ok: true, emails: [...queue.keys()].slice(0, 5) });
+  if (p === "/welcome-retry/take") { const e = [...queue].filter(([, q]) => (q.due || 0) <= clock).map(([k]) => k).slice(0, 5);
+    for (const k of e) queue.get(k).due = clock + 1800000; return J({ ok: true, emails: e }); }
   if (p === "/welcome-retry/done") { queue.delete(b.email); return J({ ok: true }); }
   return new Response("{}", { status: 404 });
 } }) };
@@ -101,13 +104,13 @@ const capped = await firstSellerSignup(env, "new@co.com");
 assert.equal(capped.welcome.skipped, "cap"); assert.equal(sent().length, 0);
 assert.equal(queue.get("new@co.com").tries, 0);
 assert.equal((await drainRetries(env))[0].r.skipped, "cap"); assert.equal(sent().length, 0); assert.ok(queue.has("new@co.com"));
-slots = 0;
+slots = 0; later();
 const d = await drainRetries(env);
 assert.ok(d[0].r.ok); assert.equal(sent().length, 1); assert.ok(!queue.has("new@co.com"));
 assert.deepEqual(await drainRetries({ ...env, FIRST_SELLER_EMAIL: "off" }), []);
 
 // 9. Unsubscribed while queued: drain drops it and sends nothing.
-queue.set("new@co.com", { tries: 1 }); contacts["new@co.com"].unsubscribed = true; calls = [];
+queue.set("new@co.com", { tries: 1, due: 0 }); contacts["new@co.com"].unsubscribed = true; calls = [];
 assert.equal((await drainRetries(env))[0].r.skipped, "unsubscribed"); assert.equal(sent().length, 0); assert.ok(!queue.has("new@co.com"));
 
 // 10. Resend 429 is reported, never thrown, and queued (tries + 1); gives up after 5 real failures.
@@ -116,7 +119,40 @@ globalThis.fetch = async (u, o) => u.endsWith("/emails") ? (calls.push({ u, o })
 const refused = await firstSellerSignup(env, "third@co.com");
 assert.equal(refused.welcome.status, 429); assert.equal(refused.welcome.ok, false);
 assert.equal(queue.get("third@co.com").tries, 1);
-for (let i = 0; i < 5; i++) await drainRetries(env);
+assert.equal(queue.get("third@co.com").due, clock + 3600000); // backoff 30 min * 2^1
+assert.deepEqual(await drainRetries(env), []); // not due yet: no retry seconds later
+for (let i = 0; i < 5; i++) { later(); await drainRetries(env); }
 assert.ok(!queue.has("third@co.com"));
+
+// 11. Permanent 422: dropped at once (logged), one slot used, never retried.
+slots = 0; calls = [];
+globalThis.fetch = async (u, o) => u.endsWith("/emails") ? (calls.push({ u, o }), new Response('{"name":"validation_error"}', { status: 422 })) : ok(u, o);
+const bad = await firstSellerSignup(env, "fourth@co.com");
+assert.equal(bad.welcome.status, 422); assert.equal(bad.welcome.permanent, true); assert.ok(!queue.has("fourth@co.com")); assert.equal(slots, 1);
+queue.set("fourth@co.com", { tries: 0, due: 0 }); // a queued row that turns out permanent: dropped on the first drain
+assert.equal((await drainRetries(env))[0].r.permanent, true); assert.ok(!queue.has("fourth@co.com"));
+const s2 = slots; for (let i = 0; i < 5; i++) { later(); await drainRetries(env); } assert.equal(slots, s2);
 globalThis.fetch = ok;
+
+// 12. Contact lookup failure on retry counts as a try (5 then dropped), and takes no slot.
+queue.set("fifth@co.com", { tries: 0, due: 0 }); contacts["fifth@co.com"] = { unsubscribed: false }; const s3 = slots;
+globalThis.fetch = async (u, o = {}) => /\/contacts\/fifth/.test(u) ? new Response("{}", { status: 503 }) : ok(u, o);
+await drainRetries(env); assert.equal(queue.get("fifth@co.com").tries, 1);
+for (let i = 0; i < 5; i++) { later(); await drainRetries(env); }
+assert.ok(!queue.has("fifth@co.com")); assert.equal(slots, s3);
+globalThis.fetch = ok;
+
+// 13. Backoff: 30 min * 2^tries, capped at 12 h.
+assert.deepEqual([1, 2, 3, 4, 5, 9].map((n) => retryDelayMs(n) / 60000), [60, 120, 240, 480, 720, 720]);
+
+// 14. Switch on + missing secret: logs the missing NAMES only, sends nothing, drain needs all three.
+const logs = []; const cl = console.log; console.log = (...a) => logs.push(a.join(" "));
+calls = [];
+assert.deepEqual(await firstSellerSignup({ ...env, UNSUB_SECRET: "" }, "x@co.com"), { skipped: "off" });
+assert.deepEqual(await drainRetries({ ...env, RESEND_AUDIENCE_ID: undefined }), []);
+console.log = cl;
+assert.equal(calls.length, 0);
+assert.ok(logs.some((l) => l.includes("missing Worker secret(s): UNSUB_SECRET")));
+assert.ok(logs.some((l) => l.includes("missing Worker secret(s): RESEND_AUDIENCE_ID")));
+assert.ok(!logs.join("").includes("s3cret") && !logs.join("").includes(" k "));
 console.log("first-seller-welcome: PASS");

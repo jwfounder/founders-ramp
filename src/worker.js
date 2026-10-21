@@ -1,4 +1,4 @@
-import { firstSellerSignup, handleUnsubscribe, drainRetries } from "./email/resend.js";
+import { firstSellerSignup, handleUnsubscribe, drainRetries, retryDelayMs } from "./email/resend.js";
 const REB2B =
   '<script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("Z6PVLHZZK96R");</script>';
 
@@ -105,7 +105,8 @@ export class FrStore {
     }
     if (url.pathname.startsWith("/welcome-retry/") && request.method === "POST") {
       // First Seller welcome retry queue. A row stays until /done; /take leases rows for 30 min so a dead drain
-      // can't lose them. Only real send failures count toward the 5-try limit; waiting on the cap does not.
+      // can't lose them. Real failures count toward the 5-try limit and back off (30 min * 2^tries, max 12 h); cap waits don't.
+      // Stored per row: raw email (needed to send), due, tries, why (20 chars). Rows go on success, permanent refusal, unsubscribe or 5 failures.
       this.sql.exec("CREATE TABLE IF NOT EXISTS welcome_retry (email TEXT PRIMARY KEY, due INTEGER NOT NULL, tries INTEGER NOT NULL, why TEXT)");
       const now = Date.now();
       if (url.pathname === "/welcome-retry/add") {
@@ -114,7 +115,8 @@ export class FrStore {
         const tries = (row ? row.tries : 0) + (why === "cap" ? 0 : 1);
         if (tries > 5) { this.sql.exec("DELETE FROM welcome_retry WHERE email = ?", email); return Response.json({ ok: false, reason: "gave up after 5 tries" }); }
         if (!row && this.sql.exec("SELECT COUNT(*) AS n FROM welcome_retry").one().n >= 500) return Response.json({ ok: false, reason: "queue full" });
-        this.sql.exec("INSERT OR REPLACE INTO welcome_retry (email, due, tries, why) VALUES (?, ?, ?, ?)", email, now, tries, String(why || "").slice(0, 20));
+        const due = why === "cap" ? now : now + retryDelayMs(tries); // backoff only for real failures
+        this.sql.exec("INSERT OR REPLACE INTO welcome_retry (email, due, tries, why) VALUES (?, ?, ?, ?)", email, due, tries, String(why || "").slice(0, 20));
         return Response.json({ ok: true, tries });
       }
       if (url.pathname === "/welcome-retry/take") {

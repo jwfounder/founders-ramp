@@ -7,6 +7,16 @@ const API = "https://api.resend.com";
 export const WELCOME_FROM = "Founders Ramp <hello@foundersramp.net>"; // fixed; no env override
 export const WELCOME_REPLY_TO = "jw@foundersramp.net";
 export const DAILY_SEND_CAP = 90; // Resend free tier is 100/day
+const REQUIRED = ["RESEND_API_KEY", "RESEND_AUDIENCE_ID", "UNSUB_SECRET"];
+// Retry backoff for real failures: 30 min * 2^tries, capped at 12 h (tries is the count after this failure).
+export function retryDelayMs(tries) { return Math.min(30 * 60000 * 2 ** Math.max(0, tries), 12 * 3600000); }
+// True only when switched on AND all three secrets exist. Logs missing secret NAMES (never values) when on.
+export function ready(env) {
+  if (env.FIRST_SELLER_EMAIL !== "on") return false;
+  const missing = REQUIRED.filter((k) => !env[k]);
+  if (missing.length) { console.log("first_seller: switch is on but missing Worker secret(s):", missing.join(", ")); return false; }
+  return true;
+}
 const FROM_OK = /<[^@<>\s]+@foundersramp\.net>$/;
 
 const enc = (s) => new TextEncoder().encode(s);
@@ -78,7 +88,8 @@ async function queueRetry(env, email, why) {
 export async function sendWelcome(env, email) {
   if (!FROM_OK.test(WELCOME_FROM)) return { skipped: "bad_from" };
   const cur = await call(env, `/contacts/${encodeURIComponent(email)}`, undefined, { method: "GET" });
-  if (!cur.ok) return { skipped: cur.status === 404 ? "no_contact" : "lookup_failed", status: cur.status };
+  if (cur.status === 404) return { skipped: "no_contact" };
+  if (!cur.ok) { console.log("first_seller: contact lookup failed", cur.status); await queueRetry(env, email, "lookup_" + cur.status); return { skipped: "lookup_failed", status: cur.status }; }
   if (cur.json && cur.json.unsubscribed) return { skipped: "unsubscribed" };
   const url = await unsubUrl(env, email);
   const { text, html } = buildWelcome(url);
@@ -93,23 +104,24 @@ export async function sendWelcome(env, email) {
   const r = await call(env, "/emails", msg, { idem });
   if (!r.ok) {
     console.log("first_seller: Resend refused welcome", r.status, r.json && r.json.name);
-    if (r.status === 429 || r.status >= 500) await queueRetry(env, email, "http_" + r.status);
+    if (r.status === 429 || r.status >= 500 || r.status === 0) await queueRetry(env, email, "http_" + r.status);
+    else { console.log("first_seller: permanent refusal, welcome dropped", r.status); return { ok: false, status: r.status, permanent: true }; }
   }
   return { ok: r.ok, status: r.status, id: r.json && r.json.id };
 }
 
 // Drain up to n queued retries (each still checks unsubscribe status and takes a cap slot).
 export async function drainRetries(env, n = 5) {
-  if (env.FIRST_SELLER_EMAIL !== "on" || !env.RESEND_API_KEY || !env.UNSUB_SECRET) return [];
+  if (!ready(env)) return [];
   const j = await storeJson(env, "/welcome-retry/take?n=" + n);
   const out = [];
   for (const email of j.emails || []) {
     let r;
     try { r = await sendWelcome(env, email); }
-    catch (e) { console.log("first_seller: retry error", String(e && e.message)); continue; } // lease expires, retried later
+    catch (e) { console.log("first_seller: retry error", String(e && e.message)); await queueRetry(env, email, "error"); continue; } // counts as a try
     out.push({ email, r });
     // Sent, or nothing to send any more: drop it. A failed send already re-queued itself (tries + 1).
-    if (r.ok || r.skipped === "unsubscribed" || r.skipped === "no_contact" || r.skipped === "bad_from") await storeJson(env, "/welcome-retry/done", { email });
+    if (r.ok || r.permanent || r.skipped === "unsubscribed" || r.skipped === "no_contact" || r.skipped === "bad_from") await storeJson(env, "/welcome-retry/done", { email });
     if (r.skipped === "cap") break; // still capped: stop for now
   }
   return out;
@@ -117,7 +129,7 @@ export async function drainRetries(env, n = 5) {
 
 // Never throws. Lead storage already happened before this runs.
 export async function firstSellerSignup(env, email) {
-  if (env.FIRST_SELLER_EMAIL !== "on" || !env.RESEND_API_KEY || !env.RESEND_AUDIENCE_ID || !env.UNSUB_SECRET) return { skipped: "off" };
+  if (!ready(env)) return { skipped: "off" };
   if (!FROM_OK.test(WELCOME_FROM)) return { skipped: "bad_from" };
   try {
     // Existing contact (subscribed or unsubscribed) = already welcomed or opted out: never send again,
