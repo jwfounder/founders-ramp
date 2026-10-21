@@ -37,11 +37,7 @@
     .chk-out{margin-top:24px}
     .chk-r{border-left:3px solid var(--red);padding:4px 0 4px 18px}
     .chk .text-link{color:var(--red);font-weight:600;text-decoration:underline;text-underline-offset:4px}
-    .chk .lead-form{display:grid;gap:10px;max-width:520px;margin-top:12px}
-    .chk .lead-form label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
-    .chk .lead-form input{font:inherit;font-size:16px;color:var(--ink);padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:0;width:100%}
     .chk .microline{margin:8px 0 0;color:var(--muted);font-size:14px}
-    @media (max-width:640px){.chk button.btn,.chk .lead-form .btn,.chk .ask .btn{display:block;width:100%;text-align:center}}
   </style>
 </head>
 
@@ -140,12 +136,6 @@
           <p><a class="text-link" href="/answers/sdr-or-ae-first/">Read: Should a founder hire an SDR or an AE first? &rarr;</a></p>
         </div>
         <div id="chk-after" hidden>
-          <p>Want Justin to look at your answers? Leave your email.</p>
-          <form class="lead-form" action="/api/lead" method="post" data-lead-form="on">
-            <label>Work email<input type="email" name="email" required autocomplete="email" placeholder="you@company.com"></label>
-            <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="check"><input type="hidden" name="page" value="/check/first-sales-hire/"><input type="hidden" name="check_band" id="chk-band" value=""><input type="hidden" name="check_answers" id="chk-ans" value="">
-            <button type="submit" class="btn">Send</button>
-          </form>
           <div class="ask">
             <a class="btn" href="https://cal.com/justin-weller-nsrjlg/30min" data-ask="check">Get a 20 minute look at your pipeline</a>
             <p class="microline">No pitch. Bring one live deal.</p>
@@ -173,13 +163,12 @@
       var b=M[a.join('')];
       out.querySelectorAll('.chk-r').forEach(function(r){r.hidden=r.getAttribute('data-band')!==b;});
       document.getElementById('chk-after').hidden=false;
-      document.getElementById('chk-band').value=b;document.getElementById('chk-ans').value=a.join('');
+      
       out.hidden=false;out.focus();
       ev('check_result',b);
     });
   })();
   </script>
-  <script src="/js/lead-form.js?v=3" defer></script>
   <script src="/js/nav.js?v=nav2" defer></script>
 </body>
 </html>
