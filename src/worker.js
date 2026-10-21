@@ -1,3 +1,4 @@
+import { firstSellerSignup } from "./email/resend.js";
 const REB2B =
   '<script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("Z6PVLHZZK96R");</script>';
 
@@ -170,7 +171,7 @@ async function tokenMatches(presented, expectedHex) {
 // ending in a TLD of 2+ letters or a punycode TLD (xn--...). Stops Slack control text such as a@<!channel>.com.
 const EMAIL_OK = /^[^\s<>"`(),;:\\\[\]|@\u0000-\u001f\u007f\u200b-\u200d\u2060\ufeff]+@(?:[a-z0-9-]+\.)+(?:[a-z]{2,}|xn--[a-z0-9-]{2,})$/i;
 
-async function handleLead(request, env) {
+async function handleLead(request, env, ctx) {
   let fsPage = "";
   const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + (fsPage ? fsPage + "?fs=" + (ok ? "1" : "0") + "#fs-h" : "/?sent=" + (ok ? "1" : "0") + "#form-h"), ...NO_STORE } });
   if (!sameSite(request)) return back(false);
@@ -197,6 +198,8 @@ async function handleLead(request, env) {
   } catch {
     return back(false);
   }
+  // First Seller: add to the Resend list and send the welcome after the lead is stored; the redirect never waits on it.
+  if (data.source === "first_seller" && ctx) ctx.waitUntil(firstSellerSignup(env, email));
   return back(true);
 }
 
@@ -248,7 +251,7 @@ function retired() {
   return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
 }
 
-async function handle(request, env) {
+async function handle(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     if (url.hostname === "foundersramp.net") {
@@ -278,7 +281,7 @@ async function handle(request, env) {
     }
     if (path === "/api/lead") {
       if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
-      return handleLead(request, env);
+      return handleLead(request, env, ctx);
     }
     if (path === "/api/event") {
       if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
@@ -328,7 +331,7 @@ async function handle(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
-    return withSecurityHeaders(await handle(request, env));
+  async fetch(request, env, ctx) {
+    return withSecurityHeaders(await handle(request, env, ctx));
   },
 };
