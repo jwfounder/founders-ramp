@@ -106,7 +106,7 @@ export async function sendWelcome(env, email) {
   const { text, html } = buildWelcome(url);
   const msg = {
     from: WELCOME_FROM, to: [email], reply_to: WELCOME_REPLY_TO, subject: WELCOME_SUBJECT, text, html,
-    headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+    headers: { "List-Unsubscribe": `<${url}>` }, // Resend adds List-Unsubscribe-Post itself
     tags: [{ name: "list", value: "first_seller" }],
   };
   assertNoPlaceholder(msg); // throws before any slot is used or /emails is called

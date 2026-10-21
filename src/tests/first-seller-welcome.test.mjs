@@ -53,7 +53,7 @@ assert.equal(m.from, "Founders Ramp <hello@foundersramp.net>"); assert.match(WEL
 assert.equal(m.reply_to, "jw@foundersramp.net"); assert.equal(WELCOME_REPLY_TO, m.reply_to);
 assert.deepEqual(m.to, [E]);
 assert.equal(m.headers["List-Unsubscribe"], `<${url}>`);
-assert.equal(m.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+assert.ok(!("List-Unsubscribe-Post" in m.headers)); // Resend adds its own copy
 assert.equal(m.text, WELCOME_TEXT.replace("{{unsubscribe_link}}", url));
 assert.ok(m.text.includes("You got this because you signed up at foundersramp.net. Unsubscribe: " + url));
 assert.ok(m.html.includes(`<a href="${url.replace(/&/g, "&amp;")}">`));
