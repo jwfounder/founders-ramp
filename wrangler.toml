@@ -20,7 +20,7 @@ new_sqlite_classes = ["FrStore"]
 [vars]
 # First Seller welcome stays off until Skipper's final check. Secrets (wrangler secret put): RESEND_API_KEY, RESEND_AUDIENCE_ID, UNSUB_SECRET
 # (all three required; if the switch is on and one is missing, nothing sends and the Worker logs the missing name).
-FIRST_SELLER_EMAIL = "off"
+FIRST_SELLER_EMAIL = "on"
 
 # Every 30 min: retry First Seller welcomes skipped at the daily cap or on a Resend 429/5xx (no-op while FIRST_SELLER_EMAIL is off).
 [triggers]
