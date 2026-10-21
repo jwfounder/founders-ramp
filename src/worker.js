@@ -1,4 +1,4 @@
-import { firstSellerSignup, handleUnsubscribe } from "./email/resend.js";
+import { firstSellerSignup, handleUnsubscribe, drainRetries } from "./email/resend.js";
 const REB2B =
   '<script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("Z6PVLHZZK96R");</script>';
 
@@ -102,6 +102,32 @@ export class FrStore {
       }
       this.sql.exec("INSERT INTO rows (kind, at, data) VALUES (?, ?, ?)", kind, now, JSON.stringify(data));
       return Response.json({ ok: true });
+    }
+    if (url.pathname.startsWith("/welcome-retry/") && request.method === "POST") {
+      // First Seller welcome retry queue. A row stays until /done; /take leases rows for 30 min so a dead drain
+      // can't lose them. Only real send failures count toward the 5-try limit; waiting on the cap does not.
+      this.sql.exec("CREATE TABLE IF NOT EXISTS welcome_retry (email TEXT PRIMARY KEY, due INTEGER NOT NULL, tries INTEGER NOT NULL, why TEXT)");
+      const now = Date.now();
+      if (url.pathname === "/welcome-retry/add") {
+        const { email, why } = await request.json();
+        const row = this.sql.exec("SELECT tries FROM welcome_retry WHERE email = ?", email).toArray()[0];
+        const tries = (row ? row.tries : 0) + (why === "cap" ? 0 : 1);
+        if (tries > 5) { this.sql.exec("DELETE FROM welcome_retry WHERE email = ?", email); return Response.json({ ok: false, reason: "gave up after 5 tries" }); }
+        if (!row && this.sql.exec("SELECT COUNT(*) AS n FROM welcome_retry").one().n >= 500) return Response.json({ ok: false, reason: "queue full" });
+        this.sql.exec("INSERT OR REPLACE INTO welcome_retry (email, due, tries, why) VALUES (?, ?, ?, ?)", email, now, tries, String(why || "").slice(0, 20));
+        return Response.json({ ok: true, tries });
+      }
+      if (url.pathname === "/welcome-retry/take") {
+        const n = Math.min(20, Math.max(1, parseInt(url.searchParams.get("n") || "5", 10) || 5));
+        const rows = this.sql.exec("SELECT email FROM welcome_retry WHERE due <= ? ORDER BY due LIMIT ?", now, n).toArray().map((r) => r.email);
+        for (const e of rows) this.sql.exec("UPDATE welcome_retry SET due = ? WHERE email = ?", now + 1800000, e);
+        return Response.json({ ok: true, emails: rows });
+      }
+      if (url.pathname === "/welcome-retry/done") {
+        const { email } = await request.json();
+        this.sql.exec("DELETE FROM welcome_retry WHERE email = ?", email);
+        return Response.json({ ok: true });
+      }
     }
     if (request.method === "POST" && url.pathname === "/welcome-slot") {
       // First Seller welcome: at most `cap` sends per rolling 24h (Resend free tier is 100/day).
@@ -346,5 +372,9 @@ async function handle(request, env, ctx) {
 export default {
   async fetch(request, env, ctx) {
     return withSecurityHeaders(await handle(request, env, ctx));
+  },
+  // Cron (wrangler.toml [triggers]): retry First Seller welcomes skipped at the cap or on a 429/5xx.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(drainRetries(env, 10));
   },
 };

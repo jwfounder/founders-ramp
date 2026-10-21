@@ -55,16 +55,64 @@ export function buildWelcome(url) {
   return { text, html };
 }
 export function assertNoPlaceholder(msg) {
-  if (JSON.stringify(msg).includes("unsubscribe_link")) throw new Error("literal {{unsubscribe_link}} in outgoing email");
+  const all = JSON.stringify(msg);
+  if (all.includes("{{") || all.includes("unsubscribe_link")) throw new Error("template placeholder in outgoing email");
 }
 
-// Per-day send slot from the FrStore Durable Object (atomic count + insert). Returns true if a send is allowed.
-async function takeSlot(env) {
-  if (!env.FR_STORE) return false;
-  const st = env.FR_STORE.get(env.FR_STORE.idFromName("fr"));
-  const r = await st.fetch("https://fr-store/welcome-slot?cap=" + DAILY_SEND_CAP, { method: "POST" });
-  const j = r.ok ? await r.json().catch(() => ({})) : {};
-  return !!j.ok;
+function frStore(env) { return env.FR_STORE ? env.FR_STORE.get(env.FR_STORE.idFromName("fr")) : null; }
+async function storeJson(env, path, body) {
+  const st = frStore(env);
+  if (!st) return {};
+  const r = await st.fetch("https://fr-store" + path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
+  return r.ok ? await r.json().catch(() => ({})) : {};
+}
+// Per-day send slot (atomic count + insert in FrStore). True if a send is allowed.
+async function takeSlot(env) { return !!(await storeJson(env, "/welcome-slot?cap=" + DAILY_SEND_CAP)).ok; }
+// Retry queue in FrStore for welcomes skipped at the cap or refused by Resend (429/5xx). Max 5 tries per address.
+async function queueRetry(env, email, why) {
+  const j = await storeJson(env, "/welcome-retry/add", { email, why });
+  console.log("first_seller: welcome queued for retry", why, j.ok ? "queued" : "NOT queued (" + (j.reason || "store error") + ")");
+}
+
+// Send the welcome to an existing, subscribed contact. Used by signup and by the retry drain.
+export async function sendWelcome(env, email) {
+  if (!FROM_OK.test(WELCOME_FROM)) return { skipped: "bad_from" };
+  const cur = await call(env, `/contacts/${encodeURIComponent(email)}`, undefined, { method: "GET" });
+  if (!cur.ok) return { skipped: cur.status === 404 ? "no_contact" : "lookup_failed", status: cur.status };
+  if (cur.json && cur.json.unsubscribed) return { skipped: "unsubscribed" };
+  const url = await unsubUrl(env, email);
+  const { text, html } = buildWelcome(url);
+  const msg = {
+    from: WELCOME_FROM, to: [email], reply_to: WELCOME_REPLY_TO, subject: WELCOME_SUBJECT, text, html,
+    headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+    tags: [{ name: "list", value: "first_seller" }],
+  };
+  assertNoPlaceholder(msg); // throws before any slot is used or /emails is called
+  if (!(await takeSlot(env))) { await queueRetry(env, email, "cap"); return { skipped: "cap", queued: true }; }
+  const idem = "fs-welcome-" + hex(await crypto.subtle.digest("SHA-256", enc(email))).slice(0, 40);
+  const r = await call(env, "/emails", msg, { idem });
+  if (!r.ok) {
+    console.log("first_seller: Resend refused welcome", r.status, r.json && r.json.name);
+    if (r.status === 429 || r.status >= 500) await queueRetry(env, email, "http_" + r.status);
+  }
+  return { ok: r.ok, status: r.status, id: r.json && r.json.id };
+}
+
+// Drain up to n queued retries (each still checks unsubscribe status and takes a cap slot).
+export async function drainRetries(env, n = 5) {
+  if (env.FIRST_SELLER_EMAIL !== "on" || !env.RESEND_API_KEY || !env.UNSUB_SECRET) return [];
+  const j = await storeJson(env, "/welcome-retry/take?n=" + n);
+  const out = [];
+  for (const email of j.emails || []) {
+    let r;
+    try { r = await sendWelcome(env, email); }
+    catch (e) { console.log("first_seller: retry error", String(e && e.message)); continue; } // lease expires, retried later
+    out.push({ email, r });
+    // Sent, or nothing to send any more: drop it. A failed send already re-queued itself (tries + 1).
+    if (r.ok || r.skipped === "unsubscribed" || r.skipped === "no_contact" || r.skipped === "bad_from") await storeJson(env, "/welcome-retry/done", { email });
+    if (r.skipped === "cap") break; // still capped: stop for now
+  }
+  return out;
 }
 
 // Never throws. Lead storage already happened before this runs.
@@ -79,19 +127,9 @@ export async function firstSellerSignup(env, email) {
     if (cur.status !== 404) { console.log("first_seller: contact lookup failed", cur.status); return { skipped: "lookup_failed", status: cur.status }; }
     const c = await call(env, "/contacts", { email, unsubscribed: false, segments: [{ id: env.RESEND_AUDIENCE_ID }] });
     if (!c.ok) { console.log("first_seller: contact create failed", c.status); return { contact: { ok: false, status: c.status } }; }
-    if (!(await takeSlot(env))) { console.log("first_seller: daily send cap reached, welcome not sent"); return { contact: { ok: true, status: c.status }, skipped: "cap" }; }
-    const url = await unsubUrl(env, email);
-    const { text, html } = buildWelcome(url);
-    const msg = {
-      from: WELCOME_FROM, to: [email], reply_to: WELCOME_REPLY_TO, subject: WELCOME_SUBJECT, text, html,
-      headers: { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
-      tags: [{ name: "list", value: "first_seller" }],
-    };
-    assertNoPlaceholder(msg);
-    const idem = "fs-welcome-" + hex(await crypto.subtle.digest("SHA-256", enc(email))).slice(0, 40);
-    const r = await call(env, "/emails", msg, { idem });
-    if (!r.ok) console.log("first_seller: Resend refused welcome", r.status, r.json && r.json.name);
-    return { contact: { ok: true, status: c.status }, welcome: { ok: r.ok, status: r.status, id: r.json && r.json.id } };
+    const welcome = await sendWelcome(env, email);
+    if (welcome.ok) await drainRetries(env, 2); // piggyback: a working send means capacity, so catch up a little
+    return { contact: { ok: true, status: c.status }, welcome };
   } catch (e) {
     console.log("first_seller: error", String(e && e.message));
     return { skipped: "error" };

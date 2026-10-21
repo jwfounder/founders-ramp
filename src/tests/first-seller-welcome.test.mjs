@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { firstSellerSignup, buildWelcome, assertNoPlaceholder, handleUnsubscribe, unsubUrl, WELCOME_FROM, WELCOME_REPLY_TO, DAILY_SEND_CAP } from "../email/resend.js";
+import { firstSellerSignup, sendWelcome, drainRetries, buildWelcome, assertNoPlaceholder, handleUnsubscribe, unsubUrl, WELCOME_FROM, WELCOME_REPLY_TO, DAILY_SEND_CAP } from "../email/resend.js";
 import { WELCOME_SUBJECT, WELCOME_PREVIEW, WELCOME_TEXT } from "../email/first-seller-welcome.js";
 
 // Fake Resend + fake FrStore slot counter.
@@ -15,7 +15,17 @@ globalThis.fetch = async (u, o = {}) => {
   if (u.endsWith("/emails")) { assertNoPlaceholder(JSON.parse(o.body)); return j({ id: "e1" }); }
   return j({}, 404);
 };
-const FR_STORE = { idFromName: () => 1, get: () => ({ fetch: async () => new Response(JSON.stringify({ ok: ++slots <= DAILY_SEND_CAP })) }) };
+// Fake FrStore: send slots + retry queue (same contract as the Durable Object routes).
+let queue = new Map(); // email -> {tries, why}
+const FR_STORE = { idFromName: () => 1, get: () => ({ fetch: async (u, o = {}) => {
+  const p = new URL(u).pathname, b = o.body ? JSON.parse(o.body) : {}, J = (x) => new Response(JSON.stringify(x));
+  if (p === "/welcome-slot") return J({ ok: ++slots <= DAILY_SEND_CAP });
+  if (p === "/welcome-retry/add") { const q = queue.get(b.email) || { tries: 0 }; q.tries += b.why === "cap" ? 0 : 1; q.why = b.why;
+    if (q.tries > 5) { queue.delete(b.email); return J({ ok: false, reason: "gave up after 5 tries" }); } queue.set(b.email, q); return J({ ok: true, tries: q.tries }); }
+  if (p === "/welcome-retry/take") return J({ ok: true, emails: [...queue.keys()].slice(0, 5) });
+  if (p === "/welcome-retry/done") { queue.delete(b.email); return J({ ok: true }); }
+  return new Response("{}", { status: 404 });
+} }) };
 const env = { FIRST_SELLER_EMAIL: "on", RESEND_API_KEY: "k", RESEND_AUDIENCE_ID: "seg1", UNSUB_SECRET: "s3cret", UNSUB_BASE: "http://x", FR_STORE };
 const sent = () => calls.filter((c) => c.u.endsWith("/emails"));
 
@@ -71,13 +81,42 @@ calls = [];
 assert.deepEqual(await firstSellerSignup(env, E), { skipped: "unsubscribed" });
 assert.equal(sent().length, 0); assert.equal(contacts[E].unsubscribed, true);
 
-// 7. Daily cap: once slots run out, contact is added but no email goes.
+// 7. Placeholder guard is generic: any "{{" anywhere throws, and nothing is sent.
+for (const k of ["subject", "text", "html"]) assert.throws(() => assertNoPlaceholder({ subject: "s", text: "t", html: "h", [k]: "Hi {{x}}" }));
+assert.throws(() => assertNoPlaceholder({ text: "Hi {{first_name}}" }));
+assert.doesNotThrow(() => assertNoPlaceholder({ text: "plain { braces } ok" }));
+{ // force a {{x}} into the template text at send time: sendWelcome must throw before any slot or /emails call
+  const mod = await import("../email/first-seller-welcome.js");
+  contacts["g@co.com"] = { unsubscribed: false }; calls = []; const s0 = slots;
+  const origSplit = String.prototype.split;
+  String.prototype.split = function (sep, ...r) { return origSplit.call(this === mod.WELCOME_TEXT ? this + "Hi {{x}}" : this, sep, ...r); };
+  try { await assert.rejects(() => sendWelcome(env, "g@co.com"), /placeholder/); } finally { String.prototype.split = origSplit; }
+  assert.equal(sent().length, 0); assert.equal(slots, s0);
+  delete contacts["g@co.com"];
+}
+
+// 8. Daily cap: contact is added, no email, address queued (cap waits don't count as tries); drain sends it once slots free up.
 slots = DAILY_SEND_CAP; calls = [];
 const capped = await firstSellerSignup(env, "new@co.com");
-assert.equal(capped.skipped, "cap"); assert.equal(sent().length, 0);
+assert.equal(capped.welcome.skipped, "cap"); assert.equal(sent().length, 0);
+assert.equal(queue.get("new@co.com").tries, 0);
+assert.equal((await drainRetries(env))[0].r.skipped, "cap"); assert.equal(sent().length, 0); assert.ok(queue.has("new@co.com"));
+slots = 0;
+const d = await drainRetries(env);
+assert.ok(d[0].r.ok); assert.equal(sent().length, 1); assert.ok(!queue.has("new@co.com"));
+assert.deepEqual(await drainRetries({ ...env, FIRST_SELLER_EMAIL: "off" }), []);
 
-// 8. Resend refusal (429) is reported, never thrown.
-slots = 0; globalThis.fetch = ((f) => async (u, o) => u.endsWith("/emails") ? new Response('{"name":"rate_limit_exceeded"}', { status: 429 }) : f(u, o))(globalThis.fetch);
+// 9. Unsubscribed while queued: drain drops it and sends nothing.
+queue.set("new@co.com", { tries: 1 }); contacts["new@co.com"].unsubscribed = true; calls = [];
+assert.equal((await drainRetries(env))[0].r.skipped, "unsubscribed"); assert.equal(sent().length, 0); assert.ok(!queue.has("new@co.com"));
+
+// 10. Resend 429 is reported, never thrown, and queued (tries + 1); gives up after 5 real failures.
+slots = 0; const ok = globalThis.fetch;
+globalThis.fetch = async (u, o) => u.endsWith("/emails") ? (calls.push({ u, o }), new Response('{"name":"rate_limit_exceeded"}', { status: 429 })) : ok(u, o);
 const refused = await firstSellerSignup(env, "third@co.com");
 assert.equal(refused.welcome.status, 429); assert.equal(refused.welcome.ok, false);
+assert.equal(queue.get("third@co.com").tries, 1);
+for (let i = 0; i < 5; i++) await drainRetries(env);
+assert.ok(!queue.has("third@co.com"));
+globalThis.fetch = ok;
 console.log("first-seller-welcome: PASS");
