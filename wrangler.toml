@@ -16,3 +16,7 @@ class_name = "FrStore"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["FrStore"]
+
+[vars]
+# First Seller welcome stays off until Skipper's final check. Secrets (wrangler secret put): RESEND_API_KEY, RESEND_AUDIENCE_ID.
+FIRST_SELLER_EMAIL = "off"
