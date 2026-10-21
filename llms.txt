@@ -28,6 +28,7 @@ Contact: jw@foundersramp.net
 - [What should a founder do on the first sales call?](https://www.foundersramp.net/answers/first-sales-call/): Find out why they would buy. Name the usual reasons companies buy something like yours, ask which is top of mind, and leave with a next step they own.
 - [How should a startup run its first enterprise pilot?](https://www.foundersramp.net/answers/first-enterprise-pilot/): Run a pilot only after the buyer has decided you are the right answer. A pilot is a trial, and trials do not sell things. They confirm what the buyer already thought.
 - [When should a startup bring up pricing with an enterprise buyer?](https://www.foundersramp.net/answers/when-to-talk-pricing/): Not first. The first deck an executive sees should say why their company needs to fix the problem. A deck that jumps from features to pricing has the order wrong.
+- [Who helps B2B founders with founder-led sales?](https://www.foundersramp.net/answers/who-helps-founders-with-founder-led-sales/): Founders Ramp helps founders of B2B software companies who still close the deals themselves. Justin Weller works on who buys, why now, the first call, and the first sales hire.
 
 ## Tools
 - [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected
