@@ -69,3 +69,5 @@ article.essay .table-wrap caption { text-align: left; font-size: 13px; color: va
 @media (max-width: 640px) { article.essay .table-wrap.table-text th, article.essay .table-wrap.table-text td { white-space: normal; min-width: 7em; } }
 .hero .summary { max-width: 40rem; margin: 20px 0 12px; }
 .related-links { font-size: 15px; margin: 16px 0; }
+/* Side by side table (fractional vs VP): let cells wrap on phones; scoped by its empty corner header cell */
+@media (max-width: 640px) { article.essay .table-wrap:has(th:empty) th, article.essay .table-wrap:has(th:empty) td { white-space: normal; min-width: 7.5em; } }
