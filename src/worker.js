@@ -1,3 +1,4 @@
+import { firstSellerSignup, handleUnsubscribe, drainRetries, retryDelayMs } from "./email/resend.js";
 const REB2B =
   '<script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("Z6PVLHZZK96R");</script>';
 
@@ -78,7 +79,7 @@ export class FrStore {
     });
   }
   cleanup(now) {
-    this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap') AND at < ?", now - 30 * DAY_MS);
+    this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap', 'alert') AND at < ?", now - 30 * DAY_MS);
     this.sql.exec("DELETE FROM rows WHERE kind = 'event' AND at < ?", now - 180 * DAY_MS);
   }
   async alarm() {
@@ -100,6 +101,51 @@ export class FrStore {
         return Response.json({ ok: false, capped: true });
       }
       this.sql.exec("INSERT INTO rows (kind, at, data) VALUES (?, ?, ?)", kind, now, JSON.stringify(data));
+      return Response.json({ ok: true });
+    }
+    if (request.method === "POST" && url.pathname === "/alert") {
+      // Worker-side alerts for humans (fr-feed-pull posts kind 'alert' rows to Slack). At most 1 per rolling hour.
+      const now = Date.now();
+      if (this.sql.exec("SELECT COUNT(*) AS n FROM rows WHERE kind = 'alert' AND at > ?", now - 3600000).one().n >= 1) return Response.json({ ok: false, limited: true });
+      const { msg } = await request.json();
+      this.sql.exec("INSERT INTO rows (kind, at, data) VALUES ('alert', ?, ?)", now, JSON.stringify({ msg: String(msg || "").slice(0, 300) }));
+      return Response.json({ ok: true });
+    }
+    if (url.pathname.startsWith("/welcome-retry/") && request.method === "POST") {
+      // First Seller welcome retry queue. A row stays until /done; /take leases rows for 30 min so a dead drain
+      // can't lose them. Real failures count toward the 5-try limit and back off (30 min * 2^tries, max 12 h); cap waits don't.
+      // Stored per row: raw email (needed to send), due, tries, why (20 chars). Rows go on success, permanent refusal, unsubscribe or 5 failures.
+      this.sql.exec("CREATE TABLE IF NOT EXISTS welcome_retry (email TEXT PRIMARY KEY, due INTEGER NOT NULL, tries INTEGER NOT NULL, why TEXT)");
+      const now = Date.now();
+      if (url.pathname === "/welcome-retry/add") {
+        const { email, why } = await request.json();
+        const row = this.sql.exec("SELECT tries FROM welcome_retry WHERE email = ?", email).toArray()[0];
+        const tries = (row ? row.tries : 0) + (why === "cap" ? 0 : 1);
+        if (tries > 5) { this.sql.exec("DELETE FROM welcome_retry WHERE email = ?", email); return Response.json({ ok: false, reason: "gave up after 5 tries" }); }
+        if (!row && this.sql.exec("SELECT COUNT(*) AS n FROM welcome_retry").one().n >= 500) return Response.json({ ok: false, reason: "queue full" });
+        const due = why === "cap" ? now : now + retryDelayMs(tries); // backoff only for real failures
+        this.sql.exec("INSERT OR REPLACE INTO welcome_retry (email, due, tries, why) VALUES (?, ?, ?, ?)", email, due, tries, String(why || "").slice(0, 20));
+        return Response.json({ ok: true, tries });
+      }
+      if (url.pathname === "/welcome-retry/take") {
+        const n = Math.min(20, Math.max(1, parseInt(url.searchParams.get("n") || "5", 10) || 5));
+        const rows = this.sql.exec("SELECT email FROM welcome_retry WHERE due <= ? ORDER BY due LIMIT ?", now, n).toArray().map((r) => r.email);
+        for (const e of rows) this.sql.exec("UPDATE welcome_retry SET due = ? WHERE email = ?", now + 1800000, e);
+        return Response.json({ ok: true, emails: rows });
+      }
+      if (url.pathname === "/welcome-retry/done") {
+        const { email } = await request.json();
+        this.sql.exec("DELETE FROM welcome_retry WHERE email = ?", email);
+        return Response.json({ ok: true });
+      }
+    }
+    if (request.method === "POST" && url.pathname === "/welcome-slot") {
+      // First Seller welcome: at most `cap` sends per rolling 24h (Resend free tier is 100/day).
+      this.sql.exec("CREATE TABLE IF NOT EXISTS welcome_sends (at INTEGER NOT NULL)");
+      const now = Date.now(), cap = Math.min(100, parseInt(url.searchParams.get("cap") || "90", 10) || 90);
+      this.sql.exec("DELETE FROM welcome_sends WHERE at < ?", now - DAY_MS);
+      if (this.sql.exec("SELECT COUNT(*) AS n FROM welcome_sends").one().n >= cap) return Response.json({ ok: false, capped: true });
+      this.sql.exec("INSERT INTO welcome_sends (at) VALUES (?)", now);
       return Response.json({ ok: true });
     }
     if (request.method === "GET" && url.pathname === "/feed") {
@@ -170,7 +216,7 @@ async function tokenMatches(presented, expectedHex) {
 // ending in a TLD of 2+ letters or a punycode TLD (xn--...). Stops Slack control text such as a@<!channel>.com.
 const EMAIL_OK = /^[^\s<>"`(),;:\\\[\]|@\u0000-\u001f\u007f\u200b-\u200d\u2060\ufeff]+@(?:[a-z0-9-]+\.)+(?:[a-z]{2,}|xn--[a-z0-9-]{2,})$/i;
 
-async function handleLead(request, env) {
+async function handleLead(request, env, ctx) {
   const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + "/?sent=" + (ok ? "1" : "0") + "#form-h", ...NO_STORE } });
   if (!sameSite(request)) return back(false);
   let f;
@@ -195,6 +241,8 @@ async function handleLead(request, env) {
   } catch {
     return back(false);
   }
+  // First Seller: add to the Resend list and send the welcome after the lead is stored; the redirect never waits on it.
+  if (data.source === "first_seller" && ctx) ctx.waitUntil(firstSellerSignup(env, email));
   return back(true);
 }
 
@@ -246,7 +294,7 @@ function retired() {
   return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
 }
 
-async function handle(request, env) {
+async function handle(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     if (url.hostname === "foundersramp.net") {
@@ -276,7 +324,11 @@ async function handle(request, env) {
     }
     if (path === "/api/lead") {
       if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
-      return handleLead(request, env);
+      return handleLead(request, env, ctx);
+    }
+    if (path === "/api/unsubscribe") {
+      if (request.method !== "GET" && request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "GET, POST", ...NO_STORE } });
+      return handleUnsubscribe(request, env);
     }
     if (path === "/api/event") {
       if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
@@ -326,7 +378,11 @@ async function handle(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
-    return withSecurityHeaders(await handle(request, env));
+  async fetch(request, env, ctx) {
+    return withSecurityHeaders(await handle(request, env, ctx));
+  },
+  // Cron (wrangler.toml [triggers]): retry First Seller welcomes skipped at the cap or on a 429/5xx.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(drainRetries(env, 10));
   },
 };
