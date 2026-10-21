@@ -9,7 +9,8 @@ assert.deepEqual(await firstSellerSignup({ FIRST_SELLER_EMAIL: "off", RESEND_API
 assert.equal(calls.length, 0);
 const r = await firstSellerSignup({ FIRST_SELLER_EMAIL: "on", RESEND_API_KEY: "k", RESEND_AUDIENCE_ID: "aud1" }, "o'brien@co.com");
 assert.equal(calls.length, 2); assert.ok(r.contact.ok && r.welcome.ok);
-assert.equal(calls[0].u, "https://api.resend.com/audiences/aud1/contacts");
+assert.equal(calls[0].u, "https://api.resend.com/contacts");
+assert.deepEqual(JSON.parse(calls[0].o.body).segments, [{ id: "aud1" }]);
 const m = JSON.parse(calls[1].o.body);
 assert.equal(m.reply_to, "jw@foundersramp.net"); assert.equal(WELCOME_REPLY_TO, "jw@foundersramp.net");
 assert.deepEqual(m.to, ["o'brien@co.com"]);

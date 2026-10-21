@@ -29,7 +29,13 @@ export async function firstSellerSignup(env, email) {
   if (env.FIRST_SELLER_EMAIL !== "on" || !env.RESEND_API_KEY || !env.RESEND_AUDIENCE_ID) return { skipped: true };
   const out = {};
   try {
-    out.contact = await call(env, `/audiences/${encodeURIComponent(env.RESEND_AUDIENCE_ID)}/contacts`, { email, unsubscribed: false });
+    // Resend renamed audiences to Segments: create a global contact and put it in the First Seller segment.
+    // RESEND_AUDIENCE_ID holds that segment id. If the contact already exists, add it to the segment instead.
+    const seg = env.RESEND_AUDIENCE_ID;
+    out.contact = await call(env, "/contacts", { email, unsubscribed: false, segments: [{ id: seg }] });
+    if (!out.contact.ok && out.contact.status === 409) {
+      out.contact = await call(env, `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(seg)}`, {});
+    }
   } catch { out.contact = { ok: false, status: 0 }; }
   try {
     const day = new Date().toISOString().slice(0, 10);
