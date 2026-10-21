@@ -59,6 +59,8 @@ body.page-home .btn:hover{background:var(--red-2)}
 body.page-home .ask{margin:0 0 18px}
 body.page-home .microline{margin:8px 0 0;color:var(--muted);font-size:14px}
 body.page-home .hero .text-link{font-size:16px}
+body.page-home .hero .text-link + .text-link{display:block;margin-top:8px}
+body.page-home .hero .text-link{display:inline-block}
 body.page-home .picker{padding:36px 0 40px;background:var(--bg);border-bottom:1px solid var(--line)}
 body.page-home .picker .kicker{margin-bottom:14px}
 body.page-home .picker-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
