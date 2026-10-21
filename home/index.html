@@ -26,6 +26,7 @@
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <style>.fs-signup{padding:40px 0}.fs-signup .fs-form{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;max-width:560px;margin-top:16px}.fs-signup .fs-form label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}.fs-signup .fs-form input{font:inherit;font-size:16px;color:var(--ink);padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:0;width:100%}.fs-signup .fs-form .btn{border:0;cursor:pointer;font:inherit;font-weight:600;font-size:16px;padding:13px 22px}@media (max-width:640px){.fs-signup .fs-form{grid-template-columns:1fr}.fs-signup .fs-form .btn{width:100%}}</style>
 </head>
 <body class="page-home">
   <header class="chrome">
@@ -176,6 +177,21 @@
         <a class="card tool" href="/tracker/"><span class="tool-thumb" aria-hidden="true">Tracker</span><div class="card-body"><p class="meta">Hiring</p><h3>First Sales Hire Tracker</h3><p class="desc">Startups that posted their first sales job. What they pay, what they ask for, and what that says about readiness.</p><span class="more">Open the tracker</span></div></a>
         <a class="card tool" href="/tools/first-hire-payback/"><span class="tool-thumb" aria-hidden="true">Payback</span><div class="card-body"><p class="meta">Hiring</p><h3>First hire payback calculator</h3><p class="desc">See when a first sales hire pays back. Bring your numbers, not a guess.</p><span class="more">Check my numbers</span></div></a>
       </div>
+    </div>
+  </section>
+
+  <section class="fs-signup sec-bg" aria-labelledby="fs-h">
+    <div class="wrap">
+      <h2 id="fs-h">Get The First Seller</h2>
+      <p>One lesson every Thursday from Justin's own selling and team-building that most founders get backwards. Short enough to read before your next call.</p>
+      <p>As a thank-you you get three worked examples of when a first sales hire pays back.</p>
+      <p>One email a week. Unsubscribe any time.</p>
+      <p>From the person who was on Workiva's Founding Sales Team at zero customers.</p>
+      <form class="fs-form" action="/api/lead" method="post">
+        <label>Work email<input type="email" name="email" required autocomplete="email" placeholder="you@company.com"></label>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="first_seller"><input type="hidden" name="page" value="home">
+        <button type="submit" class="btn">Sign me up</button>
+      </form>
     </div>
   </section>
 
