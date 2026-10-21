@@ -171,10 +171,12 @@ async function tokenMatches(presented, expectedHex) {
 const EMAIL_OK = /^[^\s<>"`(),;:\\\[\]|@\u0000-\u001f\u007f\u200b-\u200d\u2060\ufeff]+@(?:[a-z0-9-]+\.)+(?:[a-z]{2,}|xn--[a-z0-9-]{2,})$/i;
 
 async function handleLead(request, env) {
-  const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + "/?sent=" + (ok ? "1" : "0") + "#form-h", ...NO_STORE } });
+  let fsPage = "";
+  const back = (ok) => new Response(null, { status: 303, headers: { location: SITE_ORIGIN + (fsPage ? fsPage + "?fs=" + (ok ? "1" : "0") + "#fs-h" : "/?sent=" + (ok ? "1" : "0") + "#form-h"), ...NO_STORE } });
   if (!sameSite(request)) return back(false);
   let f;
   try { f = await request.formData(); } catch { return back(false); }
+  if (clip(f.get("source"), 40) === "first_seller") fsPage = clip(f.get("page"), 40) === "briefing" ? "/briefing/" : "/";
   if (clip(f.get("website"), 200)) return back(true); // honeypot: bots fill it, people never see it
   const email = clip(f.get("email"), 200).toLowerCase();
   if (!EMAIL_OK.test(email)) return back(false);
