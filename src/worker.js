@@ -61,7 +61,7 @@ const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722
 // POST/DELETE /api/feed/delete takes a separate admin token (x-fr-admin-token). Same pattern: only its SHA-256
 // is here; the token itself lives only on the box.
 const FEED_ADMIN_TOKEN_SHA256 = "a34d6de3ee82cd54006b3b47dd1153c57d636a48ac9db3046827918df8e3e535";
-const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view"]);
+const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view", "landing"]);
 const CAPS_PER_HOUR = { lead: 60, event: 1000 };
 const DAY_MS = 86400000;
 const SITE_ORIGIN = "https://www.foundersramp.net";
@@ -193,6 +193,21 @@ function utmFrom(qs) {
   return out;
 }
 
+// Partner tag from a ?ref= link (e.g. /?ref=acme-cfo): lowercase letters, digits, - and _, max 40. Anything else is dropped.
+function refFrom(field, qs) {
+  let v = String(field == null ? "" : field);
+  if (!v) { try { v = new URLSearchParams(qs || "").get("ref") || ""; } catch {} }
+  v = v.trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9_-]{0,39}$/.test(v) ? v : "";
+}
+
+// Referrer host only (never a path or query); our own hosts count as no referrer.
+function hostFrom(v) {
+  const h = String(v == null ? "" : v).trim().toLowerCase();
+  if (h.length > 120 || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(h)) return "";
+  return /(^|\.)foundersramp\.net$/.test(h) ? "" : h;
+}
+
 async function sha256Hex(text) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -234,6 +249,8 @@ async function handleLead(request, env, ctx) {
     source: clip(f.get("source"), 40) || "site_form",
     page: clip(f.get("page"), 40),
     utm: utmFrom(ref),
+    ref: refFrom(f.get("ref"), ref),
+    referrer_host: hostFrom(f.get("rh")),
     country: clip(request.cf && request.cf.country, 4),
   };
   try {
@@ -260,8 +277,9 @@ async function handleEvent(request, env) {
     name: b.n,
     path: clip(b.p, 200),
     label: clip(b.l, 120),
-    referrer_host: clip(b.r, 120),
+    referrer_host: hostFrom(b.r),
     utm: utmFrom(b.q),
+    ref: refFrom("", b.q),
     country: clip(request.cf && request.cf.country, 4),
   };
   try {
