@@ -44,6 +44,7 @@ Contact: jw@foundersramp.net
 - [Lessons from the books](https://www.foundersramp.net/approach/books/lessons): What to do on Monday
 
 ## Writings
+- [The first call: find out why they'd buy](https://www.foundersramp.net/writings/first-call-opener): Name the usual reasons companies buy, then ask which is top of mind
 - [Repeatable Forecast: 5 Green Fields](https://www.foundersramp.net/writings/five-green-fields): Crushing your forecast is awesome. It also means you need to get better at forecasting.
 - [There is no transition out of sales as a founder](https://www.foundersramp.net/writings/no-transition): The roles change. One founder stays the steward of revenue
 - [Are you hawking your shiny object?](https://www.foundersramp.net/writings/shiny-object): A calendar hold is not a deal
