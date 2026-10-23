@@ -111,6 +111,19 @@ export class FrStore {
       this.sql.exec("INSERT INTO rows (kind, at, data) VALUES ('alert', ?, ?)", now, JSON.stringify({ msg: String(msg || "").slice(0, 300) }));
       return Response.json({ ok: true });
     }
+    if (request.method === "POST" && url.pathname === "/indexnow/state") {
+      // IndexNow: remembers each sitemap URL's last pinged lastmod. {get:true} reads it; {set:{...}} replaces it.
+      this.sql.exec("CREATE TABLE IF NOT EXISTS indexnow_seen (loc TEXT PRIMARY KEY, lastmod TEXT NOT NULL)");
+      const body = await request.json();
+      if (body.set) {
+        this.sql.exec("DELETE FROM indexnow_seen");
+        for (const [loc, lastmod] of Object.entries(body.set)) this.sql.exec("INSERT INTO indexnow_seen (loc, lastmod) VALUES (?, ?)", loc, lastmod);
+        return Response.json({ ok: true });
+      }
+      const seen = {};
+      for (const r of this.sql.exec("SELECT loc, lastmod FROM indexnow_seen").toArray()) seen[r.loc] = r.lastmod;
+      return Response.json({ ok: true, seen });
+    }
     if (url.pathname.startsWith("/welcome-retry/") && request.method === "POST") {
       // First Seller welcome retry queue. A row stays until /done; /take leases rows for 30 min so a dead drain
       // can't lose them. Real failures count toward the 5-try limit and back off (30 min * 2^tries, max 12 h); cap waits don't.
@@ -379,12 +392,43 @@ async function handle(request, env, ctx) {
       .transform(response);
 }
 
+// IndexNow (Bing, Yandex and others): on each cron tick, read the deployed sitemap and ping only URLs whose
+// lastmod changed since the last successful ping. The key is public by design and served at /<key>.txt.
+const INDEXNOW_KEY = "21f5c85c4d61b6627904b046c026dc6f";
+async function indexNowPing(env) {
+  try {
+    const res = await env.ASSETS.fetch(new Request(SITE_ORIGIN + "/sitemap.xml"));
+    if (!res.ok) return;
+    const xml = await res.text();
+    const now = {};
+    for (const m of xml.matchAll(/<url>\s*<loc>([^<]+)<\/loc>(?:\s*<lastmod>([^<]+)<\/lastmod>)?/g)) now[m[1].trim()] = (m[2] || "").trim();
+    const fr = store(env);
+    const state = await (await fr.fetch("https://fr-store/indexnow/state", { method: "POST", body: JSON.stringify({ get: true }) })).json();
+    const changed = Object.keys(now).filter((loc) => state.seen[loc] !== now[loc] && loc.startsWith(SITE_ORIGIN + "/"));
+    if (changed.length === 0) return;
+    const ping = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ host: "www.foundersramp.net", key: INDEXNOW_KEY, keyLocation: SITE_ORIGIN + "/" + INDEXNOW_KEY + ".txt", urlList: changed.slice(0, 10000) }),
+    });
+    // 200 and 202 mean accepted. Anything else: keep the old state so the next tick retries.
+    if (ping.status === 200 || ping.status === 202) {
+      await fr.fetch("https://fr-store/indexnow/state", { method: "POST", body: JSON.stringify({ set: now }) });
+    }
+    console.log("indexnow", ping.status, changed.length);
+  } catch (e) {
+    console.log("indexnow error", String(e).slice(0, 200));
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     return withSecurityHeaders(await handle(request, env, ctx));
   },
-  // Cron (wrangler.toml [triggers]): retry First Seller welcomes skipped at the cap or on a 429/5xx.
+  // Cron (wrangler.toml [triggers]): retry First Seller welcomes skipped at the cap or on a 429/5xx,
+  // and ping IndexNow for sitemap URLs whose lastmod changed.
   async scheduled(event, env, ctx) {
     ctx.waitUntil(drainRetries(env, 10));
+    ctx.waitUntil(indexNowPing(env));
   },
 };
