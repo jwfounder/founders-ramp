@@ -18,7 +18,7 @@
   <link rel="preload" href="/fonts/BarlowCondensed-700-latin-f60870.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=f1">
   <link rel="stylesheet" href="../css/site.css?v=os33">
-  <link rel="stylesheet" href="../css/home.css?v=hr2">
+  <link rel="stylesheet" href="../css/home.css?v=dr1">
   <link rel="stylesheet" href="/css/nav.css?v=nav3">
   <script type="application/ld+json">
   {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.foundersramp.net/#org","name":"Founders Ramp","legalName":"Founders Ramp LLC","url":"https://www.foundersramp.net/","logo":{"@type":"ImageObject","url":"https://www.foundersramp.net/assets/logo.jpg"},"email":"jw@foundersramp.net","description":"Founders Ramp helps founders build a repeatable way to sell before they hire sellers.","address":{"@type":"PostalAddress","addressLocality":"Tampa","addressRegion":"FL","addressCountry":"US"},"founder":{"@id":"https://www.foundersramp.net/#justin"},"sameAs":["https://www.linkedin.com/company/foundersramp","https://x.com/FoundersRamp"]},{"@type":"WebSite","@id":"https://www.foundersramp.net/#website","url":"https://www.foundersramp.net/","name":"Founders Ramp","inLanguage":"en","publisher":{"@id":"https://www.foundersramp.net/#org"}},{"@type":"Person","@id":"https://www.foundersramp.net/#justin","name":"Justin Weller","jobTitle":"Founder","url":"https://www.foundersramp.net/about/justin-weller/","worksFor":{"@id":"https://www.foundersramp.net/#org"},"address":{"@type":"PostalAddress","addressLocality":"Tampa","addressRegion":"FL","addressCountry":"US"},"knowsAbout":["Founder-led sales","First sales hire","Enterprise software sales","Go-to-market strategy"],"sameAs":["https://www.linkedin.com/in/jweller","https://www.crunchbase.com/person/justin-weller-0d0d"]}]}
@@ -204,17 +204,23 @@
   </section>
   <script>(function(){var m=/[?&]fs=([01])/.exec(location.search);if(!m)return;var s=document.querySelector('.fs-signup');if(!s)return;if(m[1]==='1'){s.querySelector('.fs-form').hidden=true;s.querySelector('.fs-thanks').hidden=false;}else{s.querySelector('.fs-error').hidden=false;}})();</script>
 
-  <section class="home-form sec-white" aria-labelledby="form-h">
+  <section class="home-form sec-white" id="deal-read" aria-labelledby="form-h">
     <div class="wrap form-grid">
       <div>
         <p class="kicker">Not ready to book?</p>
-        <h2 id="form-h">Tell us how we can help.</h2>
-        <form class="lead-form" action="/api/lead" method="post" data-lead-form="on">
+        <h2 id="form-h">Get a free deal read.</h2>
+        <p class="sub">Pick one enterprise deal you're working right now. Tell me in a few lines where it stands. I'll send back a one-page read: the next step I'd take, who's missing from the deal, and the biggest risk. No call needed.</p>
+        <form class="lead-form" action="/api/lead" method="post" data-lead-form="on" data-thanks="Got it. Your one-page read comes back by email.">
           <label>Work email<input type="email" name="email" required autocomplete="email" placeholder="you@company.com"></label>
-          <label>What do you need?<input type="text" name="motion" placeholder="One line is fine"></label>
-          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="site_form"><input type="hidden" name="page" value="home">
-          <button type="submit" class="btn">Send</button>
+          <label>Where it stands<select name="dr_stage" required><option value="">Choose one</option><option value="First call done">First call done</option><option value="In discovery">In discovery</option><option value="Demo or pilot running">Demo or pilot running</option><option value="One person likes it. The company hasn't moved.">One person likes it. The company hasn't moved.</option><option value="Proposal out">Proposal out</option><option value="Gone quiet">Gone quiet</option></select></label>
+          <label>What's the problem, in their words, and what does doing nothing cost them?<textarea name="dr_problem" required maxlength="500" rows="4" placeholder="Their words if you have them. Who feels it if nothing changes this quarter. Anything else stuck, add it here."></textarea></label>
+          <label>Who have you met, who owns the budget, and who else has to agree?<textarea name="dr_people" required maxlength="500" rows="4" placeholder="Titles are enough. Who would make the case for you inside? &quot;Don't know&quot; is a fine answer."></textarea></label>
+          <label>Next step: what, when, and who on their side owns it<input type="text" name="dr_next" required maxlength="200" placeholder="Or &quot;nothing booked&quot;"></label>
+          <label>The company you're selling to (optional)<input type="text" name="dr_company" maxlength="120" placeholder="Company name"></label>
+          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="deal_read"><input type="hidden" name="page" value="home">
+          <button type="submit" class="btn">Send my deal</button>
         </form>
+        <p class="sub"><a href="mailto:jw@foundersramp.net?subject=Deal%20read">Or email it to jw@foundersramp.net</a></p>
       </div>
       <aside class="proof-side">
         <blockquote><p>I would not hesitate to have him in a foxhole with me anytime.</p><div class="who">SVP, Global Enterprise Sales</div></blockquote>
@@ -258,7 +264,7 @@
       <div><a href="mailto:jw@foundersramp.net">jw@foundersramp.net</a> · <a href="/faq/">FAQ</a> · <a href="/privacy/">Privacy</a></div>
     </div>
   </footer>
-  <script src="/js/lead-form.js?v=3" defer></script>
+  <script src="/js/lead-form.js?v=4" defer></script>
   <script src="/js/nav.js?v=nav2" defer></script>
 </body>
 </html>
