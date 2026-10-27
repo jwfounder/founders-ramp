@@ -214,6 +214,19 @@ async function tokenMatches(presented, expectedHex) {
 // One @; local part without whitespace, control or zero-width characters, or < > " ` ( ) , ; : \ [ ] |
 // (apostrophes are fine: o'brien@company.com); domain = dot-separated labels of letters, digits and hyphens,
 // ending in a TLD of 2+ letters or a punycode TLD (xn--...). Stops Slack control text such as a@<!channel>.com.
+const DR_STAGES = ["First call done","In discovery","Demo or pilot running","One person likes it. The company hasn't moved.","Proposal out","Gone quiet"];
+// [name, label, server cap = HTML maxlength, multiline, required]
+const DR_FIELDS = [
+  ["dr_stage","Stands",60,false,true],
+  ["dr_problem","Problem and cost",500,true,true],
+  ["dr_people","People",500,true,true],
+  ["dr_next","Next step",200,false,true],
+  ["dr_company","Company",120,false,false],
+];
+function clipKeepLines(v, n) {
+  return String(v ?? "").replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, " ").trim()
+    .replace(/\n/g, "\n  ").slice(0, n);
+}
 const EMAIL_OK = /^[^\s<>"`(),;:\\\[\]|@\u0000-\u001f\u007f\u200b-\u200d\u2060\ufeff]+@(?:[a-z0-9-]+\.)+(?:[a-z]{2,}|xn--[a-z0-9-]{2,})$/i;
 
 async function handleLead(request, env, ctx) {
@@ -226,11 +239,22 @@ async function handleLead(request, env, ctx) {
   if (clip(f.get("website"), 200)) return back(true); // honeypot: bots fill it, people never see it
   const email = clip(f.get("email"), 200).toLowerCase();
   if (!EMAIL_OK.test(email)) return back(false);
+  const isDR = clip(f.get("source"), 40) === "deal_read";
+  let drMotion = "";
+  if (isDR) {
+    const vals = {};
+    for (const [k, , n, multi, req] of DR_FIELDS) {
+      vals[k] = multi ? clipKeepLines(f.get(k), n) : clip(f.get(k), n);
+      if (req && !vals[k]) return back(false);
+    }
+    if (!DR_STAGES.includes(vals.dr_stage)) return back(false);
+    drMotion = DR_FIELDS.map(([k, l]) => `${l}: ${vals[k] || "-"}`).join("\n").slice(0, 2000);
+  }
   let ref = "";
   try { ref = new URL(request.headers.get("referer") || "").search; } catch {}
   const data = {
     email,
-    motion: clip(f.get("motion"), 2000),
+    motion: isDR ? drMotion : clip(f.get("motion"), 2000),
     source: clip(f.get("source"), 40) || "site_form",
     page: clip(f.get("page"), 40),
     utm: utmFrom(ref),
