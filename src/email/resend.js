@@ -28,7 +28,7 @@ function esc(s) {
 async function call(env, path, body, opts = {}) {
   const headers = { authorization: "Bearer " + env.RESEND_API_KEY, "content-type": "application/json" };
   if (opts.idem) headers["idempotency-key"] = opts.idem;
-  const r = await fetch(API + path, { method: opts.method || "POST", headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const r = await fetch(API + path, { method: opts.method || "POST", headers, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(10000) }); // 2026-10-28 review: 10s cap on Resend calls
   let json = null;
   try { json = await r.json(); } catch {}
   if (r.status === 401 || r.status === 403) await raiseAlert(env, `Resend ${r.status} on ${opts.method || "POST"} ${path.split("/")[1]}`);
