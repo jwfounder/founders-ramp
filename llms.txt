@@ -57,4 +57,5 @@ Contact: jw@foundersramp.net
 - [From chatbots to agentic procurement](https://www.foundersramp.net/writings/agentic-procurement): Procurement has moved from chatbots that summarize to agents that execute
 - [One person loved the demo. The company never decided.](https://www.foundersramp.net/writings/one-person-loved-the-demo): Name the economic buyer, the champion, and who is hurt if this slips
 - [We already use something for that.](https://www.foundersramp.net/writings/we-already-use-something): Ask what happens after the data leaves that system
+- [Writings FAQ](https://www.foundersramp.net/writings/faq/): Field notes on founder-led sales. Each piece takes one problem founders hit when they start selling and gives a straight answer.
 - [Newsroom](https://www.foundersramp.net/briefing/): What operators are sharing
