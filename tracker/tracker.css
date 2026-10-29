@@ -54,3 +54,5 @@ body.page-tracker .hero .table-wrap th, body.page-tracker .hero .table-wrap td {
 /* All header cells (column and row) match the answer-page .table-wrap th style. */
 body.page-tracker .hero .table-wrap th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
 body.page-tracker .hero .fr-asof { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+body.page-tracker .hero .subtitle { font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--ink); margin: -8px 0 12px; }
+body.page-tracker .hero .subtitle + .subhead { margin-top: 0; }
