@@ -1,4 +1,4 @@
-// Local tests, no network, no Cloudflare account: node --test src/tests/
+// Local tests, no network, no Cloudflare account: node --test src/tests/worker.test.mjs
 // Covers /go/ redirects (allowlist, utm_*/ref pass-through, click count) and js/ev.js events.
 import { test } from "node:test";
 import assert from "node:assert/strict";
