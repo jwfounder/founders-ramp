@@ -2,7 +2,7 @@
 // Covers /go/ redirects (allowlist, utm_*/ref pass-through, click count) and js/ev.js events.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync, cpSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -10,10 +10,12 @@ import vm from "node:vm";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = readFileSync(join(root, "src/worker.js"), "utf8");
-// Node 20 reads a .js file without package.json "type" as CommonJS, so load a .mjs copy of the worker.
+// Node reads a .js file without package.json "type" as CommonJS, so copy src/ (the worker imports ./email/*.js)
+// into a temp folder marked "type": "module" and load it from there.
 const tmp = mkdtempSync(join(tmpdir(), "fr-worker-"));
-writeFileSync(join(tmp, "worker.mjs"), src);
-const worker = (await import(pathToFileURL(join(tmp, "worker.mjs")).href)).default;
+cpSync(join(root, "src"), tmp, { recursive: true });
+writeFileSync(join(tmp, "package.json"), '{"type":"module"}');
+const worker = (await import(pathToFileURL(join(tmp, "worker.js")).href)).default;
 
 // Pull the GO_REDIRECTS and GO_ALLOWED_PREFIXES literals out of the source to check every entry.
 const GO = vm.runInNewContext("(" + /const GO_REDIRECTS = (\{[\s\S]*?\n\});/.exec(src)[1] + ")");
