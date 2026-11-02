@@ -160,7 +160,7 @@ test("/api/event still refuses go_click from the browser (server-side only)", as
   }), env, {});
   assert.equal(res.status, 204);
   assert.equal(env.added.length, 0);
-  for (const n of ["calc_run", "tracker_view", "book_click", "answers_view", "landing"]) {
+  for (const n of ["calc_run", "tracker_view", "book_click", "answers_view", "landing", "check_start", "check_result"]) {
     const e = makeEnv();
     await worker.fetch(new Request("https://www.foundersramp.net/api/event", {
       method: "POST", headers: { origin: "https://www.foundersramp.net", "user-agent": BROWSER }, body: JSON.stringify({ n, p: "/x/", r: "", q: "" }),
@@ -212,4 +212,43 @@ test("ev.js: booking link clicks (left click and middle click), not right click 
   p.fire("auxclick", { ...cal, button: 2 });
   p.fire("click", { ...p.link("/approach/", "Approach"), button: 0 });
   assert.deepEqual(p.sent.map((s) => [s.body.n, s.body.l]), [["book_click", "Get a 20 minute look"], ["book_click", "Get a 20 minute look"]]);
+});
+
+// ---- /check/first-sales-hire/ inline script: the names it sends are the names the Worker keeps ----
+test("check page: check_start on first change, check_result with the band only; both stored by /api/event", async () => {
+  const html = readFileSync(join(root, "check/first-sales-hire/index.html"), "utf8");
+  const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).find((t) => t.includes("chk-form"));
+  assert.ok(script, "check page inline script found");
+  const sent = [];
+  const fl = {};
+  const answers = { q1: "y", q2: "y", q3: "a" };
+  const form = {
+    addEventListener: (t, f) => ((fl[t] = fl[t] || []).push(f)),
+    querySelector: (sel) => { const n = /name="(q\d)"/.exec(sel)[1]; return answers[n] ? { value: answers[n] } : null; },
+  };
+  const out = { hidden: true, focus() {}, querySelectorAll: () => [] };
+  const doc = { getElementById: (id) => (id === "chk-form" ? form : id === "chk-out" ? out : { hidden: true }) };
+  class FakeBlob { constructor(parts) { this.text = parts.join(""); } }
+  vm.runInNewContext(script, {
+    document: doc, Blob: FakeBlob, JSON,
+    navigator: { sendBeacon: (u, b) => { sent.push({ u, body: JSON.parse(b.text) }); return true; } },
+    location: { pathname: "/check/first-sales-hire/", search: "" },
+  });
+  fl.change.forEach((f) => f({}));
+  fl.change.forEach((f) => f({}));
+  fl.submit.forEach((f) => f({ preventDefault() {} }));
+  assert.deepEqual(sent.map((s) => s.body.n), ["check_start", "check_result"]);
+  assert.equal(sent[1].body.l, "hire-ae");
+  for (const s of sent) {
+    assert.equal(s.u, "/api/event");
+    const e = makeEnv();
+    const res = await worker.fetch(new Request("https://www.foundersramp.net/api/event", {
+      method: "POST", headers: { origin: "https://www.foundersramp.net", "user-agent": BROWSER }, body: JSON.stringify(s.body),
+    }), e, {});
+    assert.equal(res.status, 204);
+    assert.equal(e.added.length, 1, s.body.n);
+    assert.equal(e.added[0].data.name, s.body.n);
+    assert.equal(e.added[0].data.path, "/check/first-sales-hire/");
+    assert.equal(e.added[0].data.label, s.body.n === "check_result" ? "hire-ae" : "");
+  }
 });
