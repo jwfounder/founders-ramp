@@ -4,4 +4,3 @@ README.md
 wrangler.toml
 .gitignore
 src
-tests
