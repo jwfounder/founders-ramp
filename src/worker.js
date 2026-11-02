@@ -73,7 +73,7 @@ const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722
 // POST/DELETE /api/feed/delete takes a separate admin token (x-fr-admin-token). Same pattern: only its SHA-256
 // is here; the token itself lives only on the box.
 const FEED_ADMIN_TOKEN_SHA256 = "a34d6de3ee82cd54006b3b47dd1153c57d636a48ac9db3046827918df8e3e535";
-// check_start / check_result come from the inline script on /check/first-sales-hire/ (label = result band only, never the answers).
+// check_start / check_result come from the inline script on /check/first-sales-hire/ (never the answers; check_result's band label is dropped in handleEvent).
 const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view", "landing", "check_start", "check_result"]);
 const CAPS_PER_HOUR = { lead: 60, event: 1000 };
 const DAY_MS = 86400000;
@@ -374,7 +374,8 @@ async function handleEvent(request, env) {
   const data = {
     name: b.n,
     path: clip(b.p, 200),
-    label: clip(b.l, 120),
+    // check_result's label would be the visitor's result band; keep it blank (the result is kept only with consent, via the email step).
+    label: b.n === "check_result" ? "" : clip(b.l, 120),
     referrer_host: hostFrom(b.r),
     utm: utmFrom(b.q),
     ref: refFrom("", b.q),

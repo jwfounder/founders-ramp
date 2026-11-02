@@ -215,7 +215,7 @@ test("ev.js: booking link clicks (left click and middle click), not right click 
 });
 
 // ---- /check/first-sales-hire/ inline script: the names it sends are the names the Worker keeps ----
-test("check page: check_start on first change, check_result with the band only; both stored by /api/event", async () => {
+test("check page: check_start on first change, check_result on submit; both stored by /api/event with a blank label", async () => {
   const html = readFileSync(join(root, "check/first-sales-hire/index.html"), "utf8");
   const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).find((t) => t.includes("chk-form"));
   assert.ok(script, "check page inline script found");
@@ -249,6 +249,6 @@ test("check page: check_start on first change, check_result with the band only; 
     assert.equal(e.added.length, 1, s.body.n);
     assert.equal(e.added[0].data.name, s.body.n);
     assert.equal(e.added[0].data.path, "/check/first-sales-hire/");
-    assert.equal(e.added[0].data.label, s.body.n === "check_result" ? "hire-ae" : "");
+    assert.equal(e.added[0].data.label, "", "no result band stored for " + s.body.n);
   }
 });
