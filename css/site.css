@@ -4,3 +4,8 @@
 @import url("site-2.css");
 .cta-row .call-name{flex-basis:100%;margin:4px 0 0;color:var(--muted);font-size:14px}
 .cta-row + .call-name{margin:4px 0 0;color:var(--muted);font-size:14px}
+
+/* Affiliate one-liner (hidden unless js/affiliate-config.json enabled + filled) */
+.fr-aff,[data-affiliate-slot]:not([hidden]){max-width:40rem;margin:1rem auto;padding:.6rem .9rem;border:1px solid #ddd;border-radius:4px;background:#fafafa;font:13px/1.4 var(--sans,Helvetica,Arial,sans-serif);text-align:center;color:#333}
+.fr-aff a{font-weight:700;color:inherit}
+[data-affiliate-slot][hidden]{display:none!important}

@@ -1,0 +1,18 @@
+{
+  "_note": "Sydney fills links after program approvals. enabled=false means the one-liner and any placeholder CTAs render nothing. Justin Nov 6 11:17 AM ET: affiliate links allowed on both sites, always disclosed.",
+  "enabled": false,
+  "oneliner": {
+    "brand": "",
+    "benefit": "",
+    "href": "",
+    "anchor": ""
+  },
+  "links": {
+    "hubspot": "",
+    "close": "",
+    "apollo": "",
+    "instantly": "",
+    "amazon": "",
+    "bookshop": ""
+  }
+}
