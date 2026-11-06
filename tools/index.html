@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tools we use · Founders Ramp</title>
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="description" content="Sales and GTM tools (and books) we point founders to. Affiliate links disclosed when live.">
+  <link rel="canonical" href="https://www.foundersramp.net/tools/">
+  <meta property="og:title" content="Tools we use · Founders Ramp">
+  <meta property="og:description" content="Sales and GTM tools (and books) we point founders to.">
+  <meta property="og:url" content="https://www.foundersramp.net/tools/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Founders Ramp">
+  <meta property="og:image" content="https://www.foundersramp.net/assets/logo.jpg">
+  <link rel="preload" href="/fonts/IBMPlexSans-400-latin-a68a20.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/BarlowCondensed-700-latin-f60870.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/fonts.css?v=f1">
+  <link rel="stylesheet" href="/css/site.css?v=os33">
+  <link rel="stylesheet" href="/css/nav.css?v=nav3">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="robots" content="noindex,nofollow">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.foundersramp.net/"},{"@type":"ListItem","position":2,"name":"Tools we use","item":"https://www.foundersramp.net/tools/"}]}</script>
+</head>
+<body class="page-tools">
+  <header class="chrome">
+    <div class="wrap chrome-inner">
+      <a class="brand" href="/"><img src="/assets/logo-header.webp" alt="Founders Ramp" width="71" height="52"></a>
+      <button type="button" class="menu-btn" aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span></button>
+      <nav id="site-nav">
+        <a href="/">Home</a>
+        <a href="/approach/">Approach</a>
+        <a href="/writings/">Writings</a>
+        <a href="/briefing/">Newsroom</a>
+        <a href="/services/">Services</a>
+        <a href="/about/">About Us</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="hero"><div class="wrap">
+      <p class="kicker">Tools</p>
+      <h1>Tools we use</h1>
+      <p class="lede">Sales and GTM tools (and books) we point founders to.</p>
+    </div></div>
+    <section><div class="wrap prose">
+      <p id="affiliate-disclosure"><strong>Affiliate disclosure.</strong> Some links on this page are affiliate links. If you purchase through them, Founders Ramp LLC may earn a commission at no extra cost to you. We only list tools and books we would recommend without a commission.</p>
+
+      <h2>CRM &amp; platform</h2>
+      <article id="hubspot"><h3>HubSpot</h3><p>CRM when the founder is still AE 1.</p><p><a class="btn" data-aff-key="hubspot" hidden href="#">Get HubSpot</a></p></article>
+      <article id="close"><h3>Close</h3><p>A sales CRM built for calling and emailing from one place.</p><p><a class="btn" data-aff-key="close" hidden href="#">Get Close</a></p></article>
+
+      <h2>Data &amp; outbound</h2>
+      <article id="apollo"><h3>Apollo</h3><p>Contact data and sequences when outbound is still founder-led.</p><p><a class="btn" data-aff-key="apollo" hidden href="#">Get Apollo</a></p></article>
+      <article id="instantly"><h3>Instantly</h3><p>Cold email send infrastructure when volume goes up.</p><p><a class="btn" data-aff-key="instantly" hidden href="#">Get Instantly</a></p></article>
+
+      <h2>Books</h2>
+      <article id="amazon"><h3>Amazon</h3><p>Books we point founders to.</p><p><a class="btn" data-aff-key="amazon" hidden href="#">Shop on Amazon</a></p></article>
+      <article id="bookshop"><h3>Bookshop</h3><p>The same titles via independent bookstores.</p><p><a class="btn" data-aff-key="bookshop" hidden href="#">Shop on Bookshop</a></p></article>
+
+      <p class="note">This page includes affiliate links. If you buy through them, Founders Ramp LLC may earn a commission. It does not change the price you pay.</p>
+      <p class="note"><a href="/tools/first-hire-payback/">First hire payback calculator</a></p>
+    </div></section>
+  </main>
+  <aside data-affiliate-slot hidden aria-hidden="true"></aside>
+  <footer>
+    <div class="wrap">
+      <div>Founders Ramp LLC · www.foundersramp.net</div>
+      <div><a href="mailto:jw@foundersramp.net">jw@foundersramp.net</a> · <a href="/faq/">FAQ</a> · <a href="/privacy/">Privacy</a></div>
+    </div>
+  </footer>
+  <script src="/js/nav.js?v=nav2"></script>
+  <script src="/js/affiliate.js?v=aff1" defer></script>
+  <script>
+  document.addEventListener("fr-affiliate-ready", function (ev) {
+    var cfg = ev.detail || {};
+    var links = cfg.links || {};
+    document.querySelectorAll("[data-aff-key]").forEach(function (a) {
+      var key = a.getAttribute("data-aff-key");
+      if (window.FRAffiliate) window.FRAffiliate.fillCta(a, links[key], a.textContent);
+    });
+  });
+  </script>
+</body>
+</html>
