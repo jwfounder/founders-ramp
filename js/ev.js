@@ -5,11 +5,13 @@
   // Carry only this one-time pilot's existing tags along owned navigation. No storage or cookies.
   try {
     var here = new URL(location.href || ("https://www.foundersramp.net" + p + location.search));
-    if (here.searchParams.get("utm_campaign") === "fr-views-7day-20261107" && Date.now() >= Date.parse("2026-11-07T17:48:00Z") && Date.now() < Date.parse("2026-11-15T05:00:00Z") && document.querySelectorAll) {
+    var campaign = here.searchParams.get("utm_campaign");
+    var pilot = ["fr-views-7day", "fr-views-7day-20261107"].indexOf(campaign) !== -1 || (campaign === "borrowed" && ["naval", "horowitz", "thiel"].indexOf(here.searchParams.get("utm_content")) !== -1);
+    if (pilot && Date.now() >= Date.parse("2026-11-07T17:48:00Z") && Date.now() < Date.parse("2026-11-15T05:00:00Z") && document.querySelectorAll) {
       document.querySelectorAll("a[href]").forEach(function (a) {
         var to = new URL(a.getAttribute("href"), here);
         if (to.protocol !== "https:" || !/^(www\.)?foundersramp\.net$/.test(to.hostname) || to.pathname.startsWith("/api/")) return;
-        if (to.searchParams.has("utm_campaign") && to.searchParams.get("utm_campaign") !== "fr-views-7day-20261107") return;
+        if (to.searchParams.has("utm_campaign") && to.searchParams.get("utm_campaign") !== campaign) return;
         ["utm_source","utm_medium","utm_campaign","utm_content"].forEach(function (key) {
           if (here.searchParams.has(key) && !to.searchParams.has(key)) to.searchParams.set(key,here.searchParams.get(key));
         });

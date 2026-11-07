@@ -283,12 +283,12 @@ test("hashed box-IP comparison works without recording the raw address", async (
   const h=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
   assert.equal(await pilot.matchesIPHash(ip,[h]),true);assert.equal(await pilot.matchesIPHash('192.0.2.45',[h]),false);
 });
-test("all site-owned pilot routes carry the same campaign with distinct content", async () => {
+test("site-owned pilot routes preserve Sydney and Skye campaign conventions", async () => {
   const seen=new Set();
   for (const [slug,t] of Object.entries(GO).filter(([k])=>k.startsWith('fr7-'))) {
-    const u=new URL(t);assert.equal(u.searchParams.get('utm_source'),'linkedin');assert.equal(u.searchParams.get('utm_medium'),'social');assert.equal(u.searchParams.get('utm_campaign'),'fr-views-7day-20261107');
+    const u=new URL(t);assert.equal(u.searchParams.get('utm_source'),'linkedin');assert.ok(['social','personal'].includes(u.searchParams.get('utm_medium')));assert.ok(['borrowed','fr-views-7day'].includes(u.searchParams.get('utm_campaign')));
     const c=u.searchParams.get('utm_content');assert.ok(c&&!seen.has(c));seen.add(c);
-    const {env}=await go('/go/'+slug);assert.equal(env.added.length,1);assert.equal(env.added[0].data.utm.utm_campaign,'fr-views-7day-20261107');
+    const {env}=await go('/go/'+slug);assert.equal(env.added.length,1);assert.equal(env.added[0].data.utm.utm_campaign,u.searchParams.get('utm_campaign'));
   }
   assert.equal(seen.size,5);
 });
@@ -312,4 +312,17 @@ test("pilot tags follow owned internal links only, and never overwrite another c
   vm.runInNewContext(readFileSync(join(root,'js/ev.js'),'utf8'),ctx);
   assert.equal(new URL(links[0].href).searchParams.get('utm_content'),'company-video-thiel');
   assert.equal(links[1].href,'https://outside.example/a');assert.equal(links[2].href,'/tracker/?utm_campaign=other');
+});
+
+test("existing personal and three borrowed-video tags propagate only during the pilot", () => {
+  const script=readFileSync(join(root,'js/ev.js'),'utf8');
+  for(const [campaign,content,active] of [['fr-views-7day','first-sales-hire-payback',true],['fr-views-7day','founding-ae-salary',true],['borrowed','naval',true],['borrowed','horowitz',true],['borrowed','thiel',true],['borrowed','unrelated',false]]) {
+    for(const now of [pilot.PILOT_START+1000,pilot.PILOT_END]) {
+      const a={href:'/answers/first-sales-hire-payback/',getAttribute(){return this.href;},setAttribute(k,v){this.href=v;}};
+      const ctx={Date:class extends Date{static now(){return now;}},navigator:{sendBeacon:()=>true},Blob:class{},URL,location:{pathname:'/',search:'?utm_source=linkedin&utm_campaign='+campaign+'&utm_content='+content},document:{referrer:'',querySelectorAll:()=>[a],getElementById:()=>null,addEventListener(){}}};
+      vm.runInNewContext(script,ctx);
+      if(active&&now<pilot.PILOT_END)assert.equal(new URL(a.href).searchParams.get('utm_campaign'),campaign);
+      else assert.equal(a.href,'/answers/first-sales-hire-payback/');
+    }
+  }
 });

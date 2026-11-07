@@ -34,11 +34,11 @@ function withSecurityHeaders(response, qa = false) {
 // request time and in tests/worker.test.mjs), so /go/ is never an open redirect. Add one line per slug.
 // Incoming utm_* (the five below) and a valid ?ref= are passed on, unless the destination already sets that key.
 const GO_REDIRECTS = {
-  "fr7-naval-li": "https://www.foundersramp.net/tools/first-hire-payback/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=company-video-naval",
-  "fr7-horowitz-li": "https://www.foundersramp.net/answers/first-sales-hire-payback/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=company-video-horowitz",
-  "fr7-thiel-li": "https://www.foundersramp.net/answers/founding-ae-salary/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=company-video-thiel",
-  "fr7-justin-payback-li": "https://www.foundersramp.net/tools/first-hire-payback/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=personal-post-payback",
-  "fr7-justin-lesson-li": "https://www.foundersramp.net/answers/when-to-hire-your-first-ae/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=personal-post-operating-lesson",
+  "fr7-naval-li": "https://www.foundersramp.net/approach/first-call/?utm_source=linkedin&utm_medium=social&utm_campaign=borrowed&utm_content=naval",
+  "fr7-horowitz-li": "https://www.foundersramp.net/approach/discovery/?utm_source=linkedin&utm_medium=social&utm_campaign=borrowed&utm_content=horowitz",
+  "fr7-thiel-li": "https://www.foundersramp.net/writings/product-distribution.html?utm_source=linkedin&utm_medium=social&utm_campaign=borrowed&utm_content=thiel",
+  "fr7-justin-payback-li": "https://www.foundersramp.net/answers/first-sales-hire-payback/?utm_source=linkedin&utm_medium=personal&utm_campaign=fr-views-7day&utm_content=first-sales-hire-payback",
+  "fr7-justin-lesson-li": "https://www.foundersramp.net/answers/founding-ae-salary/?utm_source=linkedin&utm_medium=personal&utm_campaign=fr-views-7day&utm_content=founding-ae-salary",
   "book": "https://cal.com/justin-weller-nsrjlg/30min",
   "calculator": "https://www.foundersramp.net/tools/first-hire-payback/",
   "2026-10-20-li-comment": "https://www.foundersramp.net/writings/five-green-fields?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=comment",
