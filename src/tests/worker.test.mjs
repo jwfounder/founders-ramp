@@ -252,3 +252,64 @@ test("check page: check_start on first change, check_result on submit; both stor
     assert.equal(e.added[0].data.label, "", "no result band stored for " + s.body.n);
   }
 });
+
+const pilot = await import(pathToFileURL(join(tmp, "pilot-analytics.js")).href);
+test("one-time pilot classifier expires; normal browsers are retained", async () => {
+  const req = new Request("https://www.foundersramp.net/", {headers:{"user-agent":BROWSER}});
+  assert.equal(await pilot.pilotQAReason(req,"",pilot.PILOT_START+1),"");
+  const qa = new Request(req,{headers:{"user-agent":BROWSER,"x-fr-qa":"1"}});
+  assert.equal(await pilot.pilotQAReason(qa,"",pilot.PILOT_START+1),"explicit-qa");
+  assert.equal(await pilot.pilotQAReason(qa,"",pilot.PILOT_END),"");
+  assert.equal(await pilot.pilotQAReason(qa,"",pilot.PILOT_START-1),"");
+});
+test("scripts, gate browsers and QA-tagged events never enter pilot counts", async (t) => {
+  t.mock.method(Date, "now", () => pilot.PILOT_START + 1000);
+  for (const ua of ["python-requests/2.32","curl/8.0",BROWSER+" sawyer-preship","HeadlessChrome/124","Playwright/1.0"]) {
+    const {env,res}=await go('/go/fr7-naval-li',{ua});
+    assert.equal(res.status,302);assert.equal(env.added.length,0,ua);
+    assert.equal(res.headers.get('x-fr-analytics'),'excluded-qa');
+  }
+  for (const source of ['qa','test','qa-sawyer','internal']) {
+    const env=makeEnv();
+    const res=await worker.fetch(new Request('https://www.foundersramp.net/api/event',{method:'POST',headers:{origin:'https://www.foundersramp.net','user-agent':BROWSER},body:JSON.stringify({n:'landing',p:'/answers/founding-ae-salary/',q:'?utm_source='+source})}),env);
+    assert.equal(res.status,204);assert.equal(env.added.length,0,source);
+  }
+  const {env,res}=await go('/go/fr7-naval-li',{headers:{'x-fr-qa':'1'}});
+  assert.equal(env.added.length,0);assert.equal(res.headers.get('cache-control'),'private, no-store');
+  assert.ok(!res.headers.get('content-security-policy').includes('https://static.cloudflareinsights.com'));
+});
+test("hashed box-IP comparison works without recording the raw address", async () => {
+  const ip='192.0.2.44';const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(ip));
+  const h=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  assert.equal(await pilot.matchesIPHash(ip,[h]),true);assert.equal(await pilot.matchesIPHash('192.0.2.45',[h]),false);
+});
+test("all site-owned pilot routes carry the same campaign with distinct content", async () => {
+  const seen=new Set();
+  for (const [slug,t] of Object.entries(GO).filter(([k])=>k.startsWith('fr7-'))) {
+    const u=new URL(t);assert.equal(u.searchParams.get('utm_source'),'linkedin');assert.equal(u.searchParams.get('utm_medium'),'social');assert.equal(u.searchParams.get('utm_campaign'),'fr-views-7day-20261107');
+    const c=u.searchParams.get('utm_content');assert.ok(c&&!seen.has(c));seen.add(c);
+    const {env}=await go('/go/'+slug);assert.equal(env.added.length,1);assert.equal(env.added[0].data.utm.utm_campaign,'fr-views-7day-20261107');
+  }
+  assert.equal(seen.size,5);
+});
+test("HTML QA responses omit first-party/reb2b injection while human HTML keeps it", async (t) => {
+  t.mock.method(Date, "now", () => pilot.PILOT_START + 1000);
+  const original=globalThis.HTMLRewriter;let appended=[];
+  globalThis.HTMLRewriter=class { on(sel,h){if(sel==='head')h.element({append:x=>appended.push(x)});return this;} transform(r){return r;} };
+  try {
+    for (const qa of [false,true]) {
+      appended=[];const env=makeEnv();env.ASSETS.fetch=async()=>new Response('<html><head></head><body>Content</body></html>',{headers:{'content-type':'text/html'}});
+      const res=await worker.fetch(new Request('https://www.foundersramp.net/',{headers:{'user-agent':BROWSER,...(qa?{'x-fr-qa':'1'}:{})}}),env);
+      assert.equal(res.status,200);assert.equal(appended.length,qa?0:1);
+      if(!qa)assert.ok(appended[0].includes('/js/ev.js?v=fr7-20261107'));
+    }
+  } finally {globalThis.HTMLRewriter=original;}
+});
+test("pilot tags follow owned internal links only, and never overwrite another campaign", () => {
+  const mk=href=>({href,getAttribute(){return this.href;},setAttribute(k,v){this.href=v;}});
+  const links=[mk('/answers/first-sales-hire-payback/'),mk('https://outside.example/a'),mk('/tracker/?utm_campaign=other')];
+  const ctx={Date:class extends Date{static now(){return pilot.PILOT_START+1000;}},navigator:{sendBeacon:()=>true},Blob:class{},URL,location:{pathname:'/answers/founding-ae-salary/',search:'?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=company-video-thiel'},document:{referrer:'',querySelectorAll:()=>links,getElementById:()=>null,addEventListener(){}}};
+  vm.runInNewContext(readFileSync(join(root,'js/ev.js'),'utf8'),ctx);
+  assert.equal(new URL(links[0].href).searchParams.get('utm_content'),'company-video-thiel');
+  assert.equal(links[1].href,'https://outside.example/a');assert.equal(links[2].href,'/tracker/?utm_campaign=other');
+});

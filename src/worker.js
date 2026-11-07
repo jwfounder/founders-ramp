@@ -1,3 +1,4 @@
+import { pilotQAReason } from "./pilot-analytics.js";
 import { firstSellerSignup, handleUnsubscribe, drainRetries, retryDelayMs } from "./email/resend.js";
 const REB2B =
   '<script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("Z6PVLHZZK96R");</script>';
@@ -16,9 +17,15 @@ const SECURITY_HEADERS = {
 
 // Assets are served behind the Worker (run_worker_first), so _headers would not apply.
 // Every response, including redirects and 404s, gets the security headers here.
-function withSecurityHeaders(response) {
+function withSecurityHeaders(response, qa = false) {
   const out = new Response(response.body, response);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) out.headers.set(k, v);
+  if (qa) {
+    // Cloudflare can inject RUM after HTMLRewriter; CSP still prevents its script from executing.
+    out.headers.set("Content-Security-Policy", CSP.replaceAll(" https://static.cloudflareinsights.com", "").replaceAll(" https://cloudflareinsights.com", ""));
+    out.headers.set("Cache-Control", "private, no-store");
+    out.headers.set("X-FR-Analytics", "excluded-qa");
+  }
   return out;
 }
 
@@ -27,6 +34,11 @@ function withSecurityHeaders(response) {
 // request time and in tests/worker.test.mjs), so /go/ is never an open redirect. Add one line per slug.
 // Incoming utm_* (the five below) and a valid ?ref= are passed on, unless the destination already sets that key.
 const GO_REDIRECTS = {
+  "fr7-naval-li": "https://www.foundersramp.net/tools/first-hire-payback/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=company-video-naval",
+  "fr7-horowitz-li": "https://www.foundersramp.net/answers/first-sales-hire-payback/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=company-video-horowitz",
+  "fr7-thiel-li": "https://www.foundersramp.net/answers/founding-ae-salary/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=company-video-thiel",
+  "fr7-justin-payback-li": "https://www.foundersramp.net/tools/first-hire-payback/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=personal-post-payback",
+  "fr7-justin-lesson-li": "https://www.foundersramp.net/answers/when-to-hire-your-first-ae/?utm_source=linkedin&utm_medium=social&utm_campaign=fr-views-7day-20261107&utm_content=personal-post-operating-lesson",
   "book": "https://cal.com/justin-weller-nsrjlg/30min",
   "calculator": "https://www.foundersramp.net/tools/first-hire-payback/",
   "2026-10-20-li-comment": "https://www.foundersramp.net/writings/five-green-fields?utm_source=linkedin&utm_medium=social&utm_campaign=2026-10-20-five-green-fields&utm_content=comment",
@@ -60,8 +72,10 @@ class DropScript {
 }
 
 class HeadInjector {
+  constructor(qa = false) { this.qa = qa; }
   element(element) {
-    element.append('<link rel="preconnect" href="https://ddwl4m2hdecbv.cloudfront.net">' + REB2B + '<script src="/js/ev.js?v=1" defer></script>', { html: true });
+    if (this.qa) return;
+    element.append('<link rel="preconnect" href="https://ddwl4m2hdecbv.cloudfront.net">' + REB2B + '<script src="/js/ev.js?v=fr7-20261107" defer></script>', { html: true });
   }
 }
 
@@ -261,6 +275,7 @@ function goLocation(target, qs) {
   return base + (qAt < 0 ? "?" : "&") + extra + hash;
 }
 async function countGo(request, env, slug, location) {
+  if (await pilotQAReason(request)) return;
   if (request.method !== "GET") return;
   const purpose = (request.headers.get("sec-purpose") || request.headers.get("purpose") || "").toLowerCase();
   if (purpose.includes("prefetch") || purpose.includes("prerender")) return;
@@ -369,6 +384,7 @@ async function handleEvent(request, env) {
   let b;
   try { b = JSON.parse((await request.text()).slice(0, 2000)); } catch { return done; }
   if (!b || !EVENT_NAMES.has(b.n)) return done;
+  if (await pilotQAReason(request, typeof b.q === "string" ? b.q : "")) return done;
   const ua = request.headers.get("user-agent") || "";
   if (/bot|crawl|spider|headless|preview/i.test(ua)) return done;
   const data = {
@@ -413,7 +429,7 @@ function retired() {
   return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
 }
 
-async function handle(request, env, ctx) {
+async function handle(request, env, ctx, qa = false) {
     const url = new URL(request.url);
     const path = url.pathname;
     if (url.hostname === "foundersramp.net") {
@@ -496,7 +512,7 @@ async function handle(request, env, ctx) {
     return new HTMLRewriter()
       .on('script[src*="js/gate.js"]', new DropScript())
       .on('script[src*="js/hit.js"]', new DropScript())
-      .on("head", new HeadInjector())
+      .on("head", new HeadInjector(qa))
       .transform(response);
 }
 
@@ -531,7 +547,8 @@ async function indexNowPing(env) {
 
 export default {
   async fetch(request, env, ctx) {
-    return withSecurityHeaders(await handle(request, env, ctx));
+    const qa = !!(await pilotQAReason(request));
+    return withSecurityHeaders(await handle(request, env, ctx, qa), qa);
   },
   // Cron (wrangler.toml [triggers]): retry First Seller welcomes skipped at the cap or on a 429/5xx,
   // and ping IndexNow for sitemap URLs whose lastmod changed.
