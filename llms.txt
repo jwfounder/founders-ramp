@@ -32,6 +32,8 @@ Contact: jw@foundersramp.net
 - [What goes in a founding AE job description?](https://www.foundersramp.net/answers/founding-ae-job-description/): What 16 US startups hiring their first seller put in the posting as of October 30, 2026: 14 of 16 use a founding AE title, 15 of 16 mention equity, 11 of 16 ask the hire to write or build the sales playbook, and 7 of 16 label their pay as base or on-target earnings.
 - [What are the most common first sales hire mistakes?](https://www.foundersramp.net/answers/first-sales-hire-mistakes/): Hiring before the way you sell is written down. The first hire freezes whatever process you have. Then: hiring a VP to figure it out, treating the hire as your exit, inspecting the calendar, and planning runway on signed deals instead of cash.
 
+- [How much equity should a founding AE get?](https://www.foundersramp.net/answers/founding-ae-equity/): In our October 30, 2026 snapshot of 16 US startup first-sales-hire postings, 15 mention equity. The 8 that state a percentage range span 0.10% to 1.00%. This is a small, mixed-role sample of advertised ranges. It establishes neither a market median nor a recommended grant. Set the offer against the role, cash compensation and grant terms. A title alone is insufficient.
+
 ## Tools
 - [First hire payback calculator](https://www.foundersramp.net/tools/first-hire-payback/): The month your first sales hire pays back what they cost, on closed revenue (gross profit) and on cash collected
 - [First Sales Hire Tracker](https://www.foundersramp.net/tracker/): Startups that posted their first sales job
