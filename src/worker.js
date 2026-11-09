@@ -1,5 +1,5 @@
 import { pilotQAReason } from "./pilot-analytics.js";
-import { firstSellerSignup, handleUnsubscribe, drainRetries, retryDelayMs } from "./email/resend.js";
+import { firstSellerSignup, handleUnsubscribe, drainRetries, retryDelayMs, notifyCapture } from "./email/resend.js";
 const REB2B =
   '<script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("Z6PVLHZZK96R");</script>';
 
@@ -89,7 +89,7 @@ const FEED_TOKEN_SHA256 = "b5b17c27e71dc45793426c7e9b772f772a92c0bd9053731993722
 const FEED_ADMIN_TOKEN_SHA256 = "a34d6de3ee82cd54006b3b47dd1153c57d636a48ac9db3046827918df8e3e535";
 // check_start / check_result come from the inline script on /check/first-sales-hire/ (never the answers; check_result's band label is dropped in handleEvent).
 const EVENT_NAMES = new Set(["calc_run", "tracker_view", "book_click", "answers_view", "landing", "check_start", "check_result"]);
-const CAPS_PER_HOUR = { lead: 60, event: 1000 };
+const CAPS_PER_HOUR = { lead: 60, event: 1000, capture: 30 };
 const DAY_MS = 86400000;
 const SITE_ORIGIN = "https://www.foundersramp.net";
 const NO_STORE = { "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" };
@@ -106,7 +106,7 @@ export class FrStore {
     });
   }
   cleanup(now) {
-    this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap', 'alert') AND at < ?", now - 30 * DAY_MS);
+    this.sql.exec("DELETE FROM rows WHERE kind IN ('lead', 'cap', 'alert', 'capture') AND at < ?", now - 30 * DAY_MS);
     this.sql.exec("DELETE FROM rows WHERE kind = 'event' AND at < ?", now - 180 * DAY_MS);
   }
   async alarm() {
@@ -179,13 +179,16 @@ export class FrStore {
         return Response.json({ ok: true });
       }
     }
-    if (request.method === "POST" && url.pathname === "/welcome-slot") {
-      // First Seller welcome: at most `cap` sends per rolling 24h (Resend free tier is 100/day).
-      this.sql.exec("CREATE TABLE IF NOT EXISTS welcome_sends (at INTEGER NOT NULL)");
-      const now = Date.now(), cap = Math.min(100, parseInt(url.searchParams.get("cap") || "90", 10) || 90);
-      this.sql.exec("DELETE FROM welcome_sends WHERE at < ?", now - DAY_MS);
-      if (this.sql.exec("SELECT COUNT(*) AS n FROM welcome_sends").one().n >= cap) return Response.json({ ok: false, capped: true });
-      this.sql.exec("INSERT INTO welcome_sends (at) VALUES (?)", now);
+    if (request.method === "POST" && (url.pathname === "/welcome-slot" || url.pathname === "/capture-slot")) {
+      // Per-rolling-24h send budgets, each in its own table: First Seller welcome (/welcome-slot, cap 90) and
+      // capture notices to Justin (/capture-slot, cap 20). Table names are fixed here, never taken from the request.
+      const t = url.pathname === "/capture-slot" ? "capture_sends" : "welcome_sends";
+      const dflt = t === "capture_sends" ? 20 : 90;
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS ${t} (at INTEGER NOT NULL)`);
+      const now = Date.now(), cap = Math.min(100, parseInt(url.searchParams.get("cap") || String(dflt), 10) || dflt);
+      this.sql.exec(`DELETE FROM ${t} WHERE at < ?`, now - DAY_MS);
+      if (this.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`).one().n >= cap) return Response.json({ ok: false, capped: true });
+      this.sql.exec(`INSERT INTO ${t} (at) VALUES (?)`, now);
       return Response.json({ ok: true });
     }
     if (request.method === "GET" && url.pathname === "/feed") {
@@ -378,6 +381,47 @@ async function handleLead(request, env, ctx) {
   return back(true);
 }
 
+
+// ONE shared email capture for every on-page offer (Justin yes, Nov 2 2026 4:45 PM ET for the check; 4:48 PM ET "Go" for
+// the shared system). POST /api/capture with email + source (+ the one detail that source allows). We keep the email,
+// the source and that detail, nothing else (no answers, inputs, utm, referrer or country). Stored as kind 'capture'
+// (30-day cleanup, 30/hour cap); fr-feed-pull writes it to /home/box/shared/shelly-inbox/captures.jsonl. Justin gets
+// one notification email per capture; nothing is sent to the visitor.
+// To add an offer: one line here (source -> allowed detail values, or null for none) + the box on the page + a privacy line.
+export const CHECK_BANDS = ["hire-ae", "sdr-first", "still-sdr", "write-it-down", "not-yet", "not-yet-sdr"];
+export const CAPTURE_SOURCES = {
+  check_plan: CHECK_BANDS,   // /check/first-sales-hire/: "Have Justin follow up" after the result; detail = result label
+  calc_results: null,        // /tools/first-hire-payback/: "Have Justin follow up"; email only
+  tracker_results: null,     // /tracker/: "Have Justin follow up"; email only
+};
+const CAPTURE_TEST_EMAIL = /^qa-[a-z0-9-]*@foundersramp\.net$/;
+async function handleCapture(request, env, ctx) {
+  const reply = (ok) => Response.json({ ok }, { headers: NO_STORE });
+  if (!sameSite(request)) return reply(false);
+  let f;
+  try { f = await request.formData(); } catch { return reply(false); }
+  if (clip(f.get("website"), 200)) return reply(true); // honeypot: bots fill it, people never see it
+  const email = clip(f.get("email"), 200).toLowerCase();
+  const source = clip(f.get("source"), 40);
+  if (!EMAIL_OK.test(email) || !Object.hasOwn(CAPTURE_SOURCES, source)) return reply(false);
+  const allowed = CAPTURE_SOURCES[source];
+  const detail = clip(f.get("detail"), 40);
+  if (allowed ? !allowed.includes(detail) : detail !== "") return reply(false);
+  const data = { email, source, detail };
+  try {
+    const r = await store(env).fetch("https://fr-store/add", { method: "POST", body: JSON.stringify({ kind: "capture", data }) });
+    const j = r.ok ? await r.json().catch(() => ({})) : {};
+    if (!j.ok) return reply(false);
+  } catch {
+    return reply(false);
+  }
+  if (!CAPTURE_TEST_EMAIL.test(email)) {
+    const n = notifyCapture(env, data).catch(() => {});
+    if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(n); else await n;
+  }
+  return reply(true);
+}
+
 async function handleEvent(request, env) {
   const done = new Response(null, { status: 204, headers: NO_STORE });
   if (!sameSite(request)) return done;
@@ -464,6 +508,10 @@ async function handle(request, env, ctx, qa = false) {
     if (path === "/api/lead") {
       if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
       return handleLead(request, env, ctx);
+    }
+    if (path === "/api/capture") {
+      if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", ...NO_STORE } });
+      return handleCapture(request, env, ctx);
     }
     if (path === "/api/unsubscribe") {
       if (request.method !== "GET" && request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "GET, POST", ...NO_STORE } });

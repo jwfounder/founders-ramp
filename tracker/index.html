@@ -16,7 +16,7 @@
 <link as="font" crossorigin="" href="/fonts/IBMPlexSans-400-latin-a68a20.woff2" rel="preload" type="font/woff2"/>
 <link as="font" crossorigin="" href="/fonts/BarlowCondensed-700-latin-f60870.woff2" rel="preload" type="font/woff2"/>
 <link href="/css/fonts.css?v=f1" rel="stylesheet"/>
-<link href="../css/site.css?v=os33" rel="stylesheet"/>
+<link href="../css/site.css?v=os36" rel="stylesheet"/>
 <link href="tracker.css?v=tr4" rel="stylesheet"/>
 <link href="https://www.foundersramp.net/tracker/" rel="canonical"/>
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebPage", "name": "First Sales Hire Tracker: founding sales jobs and pay", "url": "https://www.foundersramp.net/tracker/", "description": "6 US startups have verified founding sales openings on November 8, 2026. First-seller scope, posting-sourced pay and live job links. Updated weekly.", "dateModified": "2026-11-08", "isPartOf": {"@id": "https://www.foundersramp.net/#org"}}]}</script>
@@ -106,6 +106,18 @@
 </div>
 </section>
 <div class="wrap">
+<section class="fr-cap" aria-label="Have Justin follow up">
+  <form class="fr-cap-form" action="/api/capture" method="post" novalidate>
+    <label for="fr-cap-in">Your email</label>
+    <div class="fr-cap-row">
+      <input id="fr-cap-in" type="email" name="email" required autocomplete="email" placeholder="you@company.com">
+      <button type="submit" class="btn">Have Justin follow up</button>
+    </div>
+    <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="tracker_results">
+    <p class="fr-cap-keep">We keep only your email, so Justin can follow up. Reply or email jw@foundersramp.net and we'll stop and delete it.</p>
+  </form>
+  <p class="fr-cap-note" role="status" hidden></p>
+</section>
 <div class="cta-row tracker-cta">
 <p>Getting ready to hire your first seller? Talk it through before you post the job.</p>
 <a class="btn" href="https://cal.com/justin-weller-nsrjlg/30min">I'm hiring. Pressure-test the plan.</a>
@@ -121,6 +133,7 @@
 </footer>
 <script defer="" src="../js/quotes.js?v=rec3"></script>
 <script defer="" src="/js/nav.js?v=nav2"></script>
+<script src="/js/capture.js?v=1" defer></script>
 <script defer="" src="/js/affiliate.js?v=aff1"></script>
 </body>
 </html>

@@ -18,6 +18,9 @@ tag = "v1"
 new_sqlite_classes = ["FrStore"]
 
 [vars]
+# Capture notices: one email to jw@foundersramp.net per email left in an /api/capture box (own cap, 20 a day). Justin, 5:20 PM ET Nov 2:
+# "Yes, email me a notice for each signup." Ships with the email boxes, never before.
+CAPTURE_NOTIFY = "on"
 # First Seller welcome stays off until Skipper's final check. Secrets (wrangler secret put): RESEND_API_KEY, RESEND_AUDIENCE_ID, UNSUB_SECRET
 # (all three required; if the switch is on and one is missing, nothing sends and the Worker logs the missing name).
 FIRST_SELLER_EMAIL = "on"

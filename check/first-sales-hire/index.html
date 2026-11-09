@@ -37,6 +37,14 @@
     .chk-out{margin-top:24px}
     .chk-r{border-left:3px solid var(--red);padding:4px 0 4px 18px}
     .chk .text-link{color:var(--red);font-weight:600;text-decoration:underline;text-underline-offset:4px}
+    .chk-mail{margin:28px 0 8px;padding:18px;border:1px solid var(--line);background:var(--bg-2)}
+    .chk-mail form{margin:0}
+    .chk-mail label{display:block;font-weight:600;font-size:17px;margin-bottom:10px}
+    .chk-mail-row{display:flex;gap:10px;flex-wrap:wrap}
+    .chk-mail-row input{flex:1 1 220px;font:inherit;font-size:16px;padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:0}
+    .chk-mail-row input:focus{outline:2px solid var(--red);outline-offset:1px}
+    .chk-mail button.btn{margin-top:0}
+    .chk-keep{font-size:14px;color:var(--muted);margin:10px 0 0}
   </style>
 </head>
 
@@ -131,6 +139,18 @@
           <p>If you have a great lead engine and quality leads, hire an AE.</p>
           <p><a class="text-link" href="/answers/sdr-or-ae-first/">Read: Should a founder hire an SDR or an AE first?</a></p>
         </div>
+        <div id="chk-mail" class="chk-mail" hidden>
+          <form id="chk-email" action="/api/capture" method="post" novalidate>
+            <label for="chk-email-in">Your email</label>
+            <div class="chk-mail-row">
+              <input id="chk-email-in" type="email" name="email" required autocomplete="email" placeholder="you@company.com">
+              <button type="submit" class="btn">Have Justin follow up</button>
+            </div>
+            <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="check_plan"><input type="hidden" name="detail" value="">
+            <p class="chk-keep">We keep your email and which result you got (your result follows from your answers), so Justin can follow up. Reply or email jw@foundersramp.net and we'll stop and delete it.</p>
+          </form>
+          <p id="chk-mail-note" class="chk-keep" role="status" hidden></p>
+        </div>
         <div id="chk-after" hidden>
           <p>Want to go over your result with Justin? Book 30 minutes with him.</p>
           <div class="ask">
@@ -152,6 +172,20 @@
     var f=document.getElementById('chk-form'),out=document.getElementById('chk-out'),started=false;
     function ev(n,l){try{if(navigator.sendBeacon)navigator.sendBeacon('/api/event',new Blob([JSON.stringify({n:n,p:location.pathname,l:l||'',r:'',q:location.search})],{type:'text/plain'}));}catch(e){}}
     f.addEventListener('change',function(){if(!started){started=true;ev('check_start');}});
+    var mf=document.getElementById('chk-email'),mn=document.getElementById('chk-mail-note'),sending=false;
+    mf.addEventListener('submit',function(e){
+      e.preventDefault();
+      if(sending)return;
+      var em=mf.elements.email;
+      if(!em.value||!em.checkValidity()){mn.textContent='Please enter a working email address.';mn.hidden=false;em.focus();return;}
+      if(!mf.elements.detail.value||!window.fetch)return;
+      sending=true;
+      fetch('/api/capture',{method:'POST',body:new FormData(mf),credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+        if(j&&j.ok){mf.hidden=true;mn.textContent='Thanks. Justin will follow up at '+em.value+'.';}
+        else{mn.textContent='That did not go through. Please check your email address and try again, or write to jw@foundersramp.net.';sending=false;}
+        mn.hidden=false;
+      }).catch(function(){mn.textContent='That did not go through. Please try again, or write to jw@foundersramp.net.';mn.hidden=false;sending=false;});
+    });
     f.addEventListener('submit',function(e){
       e.preventDefault();
       var a=['q1','q2','q3'].map(function(n){var x=f.querySelector('input[name="'+n+'"]:checked');return x?x.value:'';});
@@ -159,9 +193,10 @@
       var b=M[a.join('')];
       out.querySelectorAll('.chk-r').forEach(function(r){r.hidden=r.getAttribute('data-band')!==b;});
       document.getElementById('chk-after').hidden=false;
+      var mf=document.getElementById('chk-email');mf.elements.detail.value=b;document.getElementById('chk-mail').hidden=false;
       
       out.hidden=false;out.focus();
-      ev('check_result',b);
+      ev('check_result');
     });
   })();
   </script>

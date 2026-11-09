@@ -173,3 +173,44 @@ export async function handleUnsubscribe(request, env) {
   if (request.method === "POST") return new Response(null, { status: 200, headers: { "cache-control": "no-store" } });
   return PAGE("You're unsubscribed.");
 }
+
+// Shared capture (/api/capture): ONE notification to Justin per capture (never to the visitor). Separate switch CAPTURE_NOTIFY === "on" plus RESEND_API_KEY. Recipient is fixed, no env override. Uses the same
+// own daily budget: CAPTURE_DAILY_CAP (20) notices per rolling 24h, separate from the welcome's 90. Never throws.
+export const CAPTURE_NOTIFY_TO = "jw@foundersramp.net";
+export const CAPTURE_DAILY_CAP = 20;
+async function takeCaptureSlot(env) { return !!(await storeJson(env, "/capture-slot?cap=" + CAPTURE_DAILY_CAP)).ok; }
+const CAPTURE_WHAT = {
+  check_plan: "Justin to follow up on their result on /check/first-sales-hire/",
+  calc_results: "Justin to follow up (box on the first hire payback calculator; we keep only the email, not their numbers)",
+  tracker_results: "Justin to follow up (box on the First Sales Hire Tracker; we keep only the email)",
+};
+const BAND_TITLES = {
+  "hire-ae": "Ready. Hire an AE.", "sdr-first": "Ready. Think about an SDR first.", "still-sdr": "Close. You are still the SDR.",
+  "write-it-down": "Close. Write down how you sell first.", "not-yet": "Not yet. Get the signal first.", "not-yet-sdr": "Not yet. You are the SDR.",
+};
+export function buildCaptureNotice({ email, source, detail }) {
+  const what = CAPTURE_WHAT[source] || source;
+  const subject = `Site capture: ${source}${detail ? " (" + detail + ")" : ""}`;
+  const det = detail ? `\nDetail: ${detail}${BAND_TITLES[detail] ? " (" + BAND_TITLES[detail] + ")" : ""}\n` : "";
+  const text = `${email} asked for ${what}.\n${det}\nNothing was sent to them. Reply to this email to answer them directly.\n` +
+    `Kept for 30 days in the site's storage.`;
+  return { subject, text };
+}
+export async function notifyCapture(env, data) {
+  try {
+    if (env.CAPTURE_NOTIFY !== "on") return { skipped: "off" };
+    if (!env.RESEND_API_KEY) { console.log("capture: switch is on but missing Worker secret: RESEND_API_KEY"); return { skipped: "no_key" }; }
+    if (!FROM_OK.test(WELCOME_FROM)) return { skipped: "bad_from" };
+    const { subject, text } = buildCaptureNotice(data);
+    const msg = { from: WELCOME_FROM, to: [CAPTURE_NOTIFY_TO], reply_to: data.email, subject, text, tags: [{ name: "list", value: "capture" }] };
+    assertNoPlaceholder(msg);
+    if (!(await takeCaptureSlot(env))) { console.log("capture: daily send cap reached, notice skipped (row is still in the feed)"); return { skipped: "cap" }; }
+    const idem = "cap-" + hex(await crypto.subtle.digest("SHA-256", enc([data.email, data.source, data.detail, new Date().toISOString().slice(0, 13)].join("|")))).slice(0, 40);
+    const r = await call(env, "/emails", msg, { idem });
+    if (!r.ok) console.log("capture: Resend refused notice", r.status);
+    return { ok: r.ok, status: r.status };
+  } catch (e) {
+    console.log("capture: notice error", String(e && e.message));
+    return { skipped: "error" };
+  }
+}

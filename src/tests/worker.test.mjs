@@ -227,7 +227,8 @@ test("check page: check_start on first change, check_result on submit; both stor
     querySelector: (sel) => { const n = /name="(q\d)"/.exec(sel)[1]; return answers[n] ? { value: answers[n] } : null; },
   };
   const out = { hidden: true, focus() {}, querySelectorAll: () => [] };
-  const doc = { getElementById: (id) => (id === "chk-form" ? form : id === "chk-out" ? out : { hidden: true }) };
+  const mailForm = { hidden: false, elements: { detail: { value: "" }, email: { value: "" } }, addEventListener() {} };
+  const doc = { getElementById: (id) => (id === "chk-form" ? form : id === "chk-out" ? out : id === "chk-email" ? mailForm : { hidden: true }) };
   class FakeBlob { constructor(parts) { this.text = parts.join(""); } }
   vm.runInNewContext(script, {
     document: doc, Blob: FakeBlob, JSON,
@@ -238,7 +239,9 @@ test("check page: check_start on first change, check_result on submit; both stor
   fl.change.forEach((f) => f({}));
   fl.submit.forEach((f) => f({ preventDefault() {} }));
   assert.deepEqual(sent.map((s) => s.body.n), ["check_start", "check_result"]);
-  assert.equal(sent[1].body.l, "hire-ae");
+  assert.equal(mailForm.elements.detail.value, "hire-ae", "email step gets the band only after the result shows");
+  assert.equal(sent[0].body.l, "", "check_start sends no label");
+  assert.equal(sent[1].body.l, "", "check_result sends no label (F1): the page never sends the band in an event");
   for (const s of sent) {
     assert.equal(s.u, "/api/event");
     const e = makeEnv();
@@ -251,6 +254,198 @@ test("check page: check_start on first change, check_result on submit; both stor
     assert.equal(e.added[0].data.path, "/check/first-sales-hire/");
     assert.equal(e.added[0].data.label, "", "no result band stored for " + s.body.n);
   }
+});
+
+// ---- /api/capture: the one shared email capture (stores email + source + one allowed detail; notifies Justin only) ----
+function capEnv(extra = {}, capped = false) {
+  const added = [], slots = [];
+  const stub = {
+    fetch: async (u, init) => {
+      if (String(u) === "https://fr-store/add") { added.push(JSON.parse(init.body)); return Response.json({ ok: true }); }
+      if (String(u).startsWith("https://fr-store/welcome-slot") || String(u).startsWith("https://fr-store/capture-slot")) { slots.push(String(u)); return Response.json({ ok: !capped }); }
+      return new Response("nf", { status: 404 });
+    },
+  };
+  return { added, slots, FR_STORE: { idFromName: () => "id", get: () => stub }, ASSETS: { fetch: async () => new Response("nf", { status: 404 }) }, ...extra };
+}
+async function capture(fields, { env = capEnv(), origin = "https://www.foundersramp.net", method = "POST" } = {}) {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+  const init = { method, headers: { origin, "user-agent": BROWSER } };
+  if (method === "POST") init.body = fd;
+  const waits = [];
+  const res = await worker.fetch(new Request("https://www.foundersramp.net/api/capture", init), env, { waitUntil: (p) => waits.push(p) });
+  await Promise.all(waits);
+  return { res, env, json: method === "POST" ? await res.json().catch(() => null) : null };
+}
+async function withResend(fn) {
+  const calls = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (u, init) => { calls.push({ u: String(u), body: init && init.body ? JSON.parse(init.body) : null }); return Response.json({ id: "x" }); };
+  try { await fn(calls); } finally { globalThis.fetch = real; }
+}
+const ON = { CAPTURE_NOTIFY: "on", RESEND_API_KEY: "k" };
+
+test("capture: check_plan stores exactly email + source + result label, nothing else", async () => {
+  const { json, env } = await capture({ email: "Founder@Acme.com", source: "check_plan", detail: "write-it-down", website: "" });
+  assert.deepEqual(json, { ok: true });
+  assert.equal(env.added.length, 1);
+  assert.equal(env.added[0].kind, "capture");
+  assert.deepEqual(env.added[0].data, { email: "founder@acme.com", source: "check_plan", detail: "write-it-down" });
+});
+
+test("capture: honeypot, bad email, unknown source or detail, cross-site and GET store nothing", async () => {
+  for (const [fields, want] of [
+    [{ email: "a@acme.com", source: "check_plan", detail: "hire-ae", website: "x" }, true],
+    [{ email: "not-an-email", source: "check_plan", detail: "hire-ae" }, false],
+    [{ email: "a@<!channel>.com", source: "check_plan", detail: "hire-ae" }, false],
+    [{ email: "a@acme.com", source: "check_plan", detail: "q1=y,q2=y" }, false],
+    [{ email: "a@acme.com", source: "check_plan" }, false],
+    [{ email: "a@acme.com", source: "constructor", detail: "" }, false],
+    [{ email: "a@acme.com", source: "newsletter", detail: "" }, false],
+  ]) {
+    const { json, env } = await capture(fields);
+    assert.equal(json.ok, want, JSON.stringify(fields));
+    assert.equal(env.added.length, 0, JSON.stringify(fields));
+  }
+  const x = await capture({ email: "a@acme.com", source: "check_plan", detail: "hire-ae" }, { origin: "https://evil.example" });
+  assert.equal(x.json.ok, false); assert.equal(x.env.added.length, 0);
+  const g = await capture({}, { method: "GET" });
+  assert.equal(g.res.status, 405);
+});
+
+test("capture: notice goes only to jw@foundersramp.net, only when switched on, never for QA addresses", async () => {
+  const f = { email: "a@acme.com", source: "check_plan", detail: "sdr-first" };
+  await withResend(async (calls) => {
+    await capture(f, { env: capEnv() });
+    assert.equal(calls.length, 0, "switch off: no email");
+    await capture(f, { env: capEnv({ CAPTURE_NOTIFY: "on" }) });
+    assert.equal(calls.length, 0, "no key: no email");
+    await capture({ ...f, email: "qa-x@foundersramp.net" }, { env: capEnv(ON) });
+    assert.equal(calls.length, 0, "QA address: no email");
+    const { env } = await capture(f, { env: capEnv(ON) });
+    assert.equal(env.added.length, 1);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].u, "https://api.resend.com/emails");
+    assert.deepEqual(calls[0].body.to, ["jw@foundersramp.net"]);
+    assert.equal(calls[0].body.reply_to, "a@acme.com");
+    assert.match(calls[0].body.text, /sdr-first/);
+    assert.ok(!JSON.stringify(calls[0].body).includes("{{"));
+  });
+});
+
+test("capture: a Resend failure never breaks the stored request", async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error("network"); };
+  try {
+    const { json, env } = await capture({ email: "a@acme.com", source: "check_plan", detail: "not-yet" }, { env: capEnv(ON) });
+    assert.deepEqual(json, { ok: true });
+    assert.equal(env.added.length, 1);
+  } finally { globalThis.fetch = real; }
+});
+
+test("check page: email step posts only email, source, detail and the honeypot to /api/capture", () => {
+  const html = readFileSync(join(root, "check/first-sales-hire/index.html"), "utf8");
+  const form = /<form id="chk-email"[\s\S]*?<\/form>/.exec(html)[0];
+  assert.match(form, /action="\/api\/capture"/);
+  assert.match(form, /name="source" value="check_plan"/);
+  const names = [...form.matchAll(/name="([^"]+)"/g)].map((m) => m[1]).sort();
+  assert.deepEqual(names, ["detail", "email", "source", "website"]);
+  assert.match(html, /<div id="chk-mail" class="chk-mail" hidden>/, "hidden until a result shows");
+});
+
+test("quiz email box carries Justin's approved keep line word for word (Nov 2, 4:58 PM ET)", () => {
+  const html = readFileSync(join(root, "check/first-sales-hire/index.html"), "utf8");
+  const box = html.slice(html.indexOf('id="chk-mail"'), html.indexOf('id="chk-after"'));
+  assert.ok(box.includes(`<p class="chk-keep">We keep your email and which result you got (your result follows from your answers), so Justin can follow up. Reply or email jw@foundersramp.net and we'll stop and delete it.</p>`));
+  assert.ok(html.includes("mn.textContent='Thanks. Justin will follow up at '+em.value+'.';"), "thank-you line");
+  assert.ok(!/write-up and 1-page plan will/.test(html), "no promise of a write-up or plan");
+  assert.ok(html.includes("ev('check_result');") && !/ev\('check_result',/.test(html), "F1: check_result sent without a label");
+});
+
+test("capture notices use their own 20-a-day budget (/capture-slot), never First Seller's /welcome-slot (F2)", async () => {
+  await withResend(async (calls) => {
+    const env = capEnv(ON);
+    await capture({ email: "a@acme.com", source: "check_plan", detail: "hire-ae" }, { env });
+    assert.deepEqual(env.slots, ["https://fr-store/capture-slot?cap=20"]);
+    assert.equal(calls.length, 1);
+  });
+  await withResend(async (calls) => {
+    const env = capEnv(ON, true);
+    const { json } = await capture({ email: "a@acme.com", source: "check_plan", detail: "hire-ae" }, { env });
+    assert.deepEqual(json, { ok: true }, "capped: the capture is still stored");
+    assert.equal(env.added.length, 1);
+    assert.equal(calls.length, 0, "capped: no notice");
+  });
+  const w = readFileSync(join(root, "src/worker.js"), "utf8");
+  assert.match(w, /url\.pathname === "\/capture-slot" \? "capture_sends" : "welcome_sends"/, "separate table per budget");
+});
+
+test("capture notice has no box path in it (F3)", async () => {
+  await withResend(async (calls) => {
+    await capture({ email: "a@acme.com", source: "check_plan", detail: "hire-ae" }, { env: capEnv(ON) });
+    const t = calls[0].body.text + calls[0].body.subject;
+    assert.ok(!/\/home\/|\/box|jsonl|shelly/i.test(t), t);
+  });
+});
+
+test("privacy: check requests named in the deletion paragraph", () => {
+  const html = readFileSync(join(root, "privacy/index.html"), "utf8");
+  assert.ok(html.includes("We'll remove it from our lead inbox and our list of check requests and email requests and any notes we made about it,"));
+});
+
+test("check page: no promise of an emailed write-up or plan; 'Have Justin follow up' (Justin reviews each lead himself, 5:16 PM ET)", () => {
+  const html = readFileSync(join(root, "check/first-sales-hire/index.html"), "utf8");
+  const box = html.slice(html.indexOf('id="chk-mail"'), html.indexOf('id="chk-after"'));
+  assert.ok(box.includes('<label for="chk-email-in">Your email</label>'));
+  assert.ok(box.includes('<button type="submit" class="btn">Have Justin follow up</button>'));
+  assert.ok(!/write-up|1-page plan|Send it to me/i.test(box));
+  const priv = readFileSync(join(root, "privacy/index.html"), "utf8");
+  assert.ok(priv.includes("<p>Your answers to the check's three questions stay in your browser. We never receive them. If you leave your email, we keep which result you got, and for some results that shows how you answered.</p>"));
+  assert.ok(priv.includes("After your result shows, you can have Justin follow up. Only if you do, we keep your email and which result you got. We use them so Justin can follow up."));
+  const sec = priv.slice(priv.indexOf("<h2>The first sales hire check</h2>"), priv.indexOf("<h2>Have Justin follow up, on the calculator and the tracker</h2>"));
+  assert.ok(!/write-up|1-page plan|and nothing else/.test(sec), "check section: no write-up promise, no 'and nothing else'");
+});
+
+test("capture notices are switched on in wrangler.toml (Justin, 5:20 PM ET) and the privacy page says so", () => {
+  const toml = readFileSync(join(root, "wrangler.toml"), "utf8");
+  const vars = toml.slice(toml.indexOf("[vars]"));
+  assert.match(vars, /^CAPTURE_NOTIFY = "on"$/m);
+  const priv = readFileSync(join(root, "privacy/index.html"), "utf8");
+  assert.ok(priv.includes("When you leave your email, Justin gets an email notice so he can follow up."));
+});
+
+test("calculator + tracker: 'Have Justin follow up' sends only email + source, never inputs, numbers or the view", async () => {
+  for (const [f, src] of [["tools/first-hire-payback/index.html", "calc_results"], ["tracker/index.html", "tracker_results"]]) {
+    const html = readFileSync(join(root, f), "utf8");
+    assert.equal((html.match(/<section class="fr-cap[ "]/g) || []).length, 1, f);
+    const at = html.indexOf('class="fr-cap');
+    const box = html.slice(at, html.indexOf("</section>", at));
+    assert.deepEqual([...box.matchAll(/name="([a-z]+)"/g)].map((m) => m[1]).sort(), ["email", "source", "website"], f);
+    assert.ok(box.includes(`value="${src}"`), f);
+    assert.ok(box.includes(`<p class="fr-cap-keep">We keep only your email, so Justin can follow up. Reply or email jw@foundersramp.net and we'll stop and delete it.</p>`), f);
+    assert.ok(html.includes('<script src="/js/capture.js?v=1" defer></script>'), f);
+    assert.ok(box.includes('<label for="fr-cap-in">Your email</label>') && box.includes('<button type="submit" class="btn">Have Justin follow up</button>'), f);
+    assert.ok(!/Email me my results|Send it to me/.test(box), f + ": no promise to email results");
+    const form = box.slice(0, box.indexOf("</form>"));
+    assert.ok(!/<(select|textarea)|type="(number|range|checkbox|radio)"/.test(form), f + ": no page inputs inside the capture form");
+  }
+  const calc = readFileSync(join(root, "tools/first-hire-payback/index.html"), "utf8");
+  assert.ok(calc.indexOf('class="fr-cap') > calc.indexOf("</form>"), "capture form is outside the calculator form");
+  for (const source of ["calc_results", "tracker_results"]) {
+    const { json, env } = await capture({ email: "a@acme.com", source, detail: "" });
+    assert.deepEqual(json, { ok: true });
+    assert.deepEqual(env.added[0].data, { email: "a@acme.com", source, detail: "" });
+    assert.deepEqual((await capture({ email: "a@acme.com", source, detail: "18 months" })).json, { ok: false }, source + ": any detail refused");
+  }
+});
+
+test("privacy: calculator + tracker section promises nothing is emailed back; no leftover checklist section", () => {
+  const priv = readFileSync(join(root, "privacy/index.html"), "utf8");
+  assert.ok(priv.includes("<h2>Have Justin follow up, on the calculator and the tracker</h2>"));
+  assert.ok(priv.includes("you can leave your email so Justin can follow up. Only if you do, we keep your email, and nothing else: not the numbers you typed, your results or what you were looking at."));
+  assert.ok(!/Email me my results|email you your results|checklist/i.test(priv));
+  assert.equal(priv.split("<h2>").length - 1, new Set(priv.match(/<h2>[^<]*<\/h2>/g)).size, "no duplicated sections");
 });
 
 const pilot = await import(pathToFileURL(join(tmp, "pilot-analytics.js")).href);

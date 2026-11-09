@@ -19,7 +19,7 @@
   <link rel="preload" href="/fonts/IBMPlexSans-400-latin-a68a20.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/BarlowCondensed-700-latin-f60870.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=f1">
-  <link rel="stylesheet" href="/css/site.css?v=os31">
+  <link rel="stylesheet" href="/css/site.css?v=os36">
   <style>
     .payback .wide { max-width: 64rem; }
     .payback .calc { margin: 0 0 28px; }
@@ -331,6 +331,20 @@
         <p class="privacy">What you type stays in your browser. No email needed. The copied link carries your numbers, so share it only with people you'd show them to.</p>
         <p class="sr-only" id="live" aria-live="polite" aria-atomic="true"></p>
       </div>
+
+
+      <section class="fr-cap wide" aria-label="Have Justin follow up">
+        <form class="fr-cap-form" action="/api/capture" method="post" novalidate>
+          <label for="fr-cap-in">Your email</label>
+          <div class="fr-cap-row">
+            <input id="fr-cap-in" type="email" name="email" required autocomplete="email" placeholder="you@company.com">
+            <button type="submit" class="btn">Have Justin follow up</button>
+          </div>
+          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="hidden" name="source" value="calc_results">
+          <p class="fr-cap-keep">We keep only your email, so Justin can follow up. Reply or email jw@foundersramp.net and we'll stop and delete it.</p>
+        </form>
+        <p class="fr-cap-note" role="status" hidden></p>
+      </section>
 
       <div class="chart-box wide">
         <div class="legend" aria-hidden="true">
@@ -1096,6 +1110,7 @@
   })();
   </script>
   <script src="/js/nav.js?v=nav2" defer></script>
+  <script src="/js/capture.js?v=1" defer></script>
 <script src="/js/affiliate.js?v=aff1" defer></script>
 </body>
 </html>
