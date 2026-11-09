@@ -467,8 +467,8 @@ async function handleFeedDelete(request, env, url) {
   return new Response(r.body, { status: r.status, headers: { "content-type": "application/json", ...NO_STORE } });
 }
 
-// Retired first-party trackers. They used to write every view and gate submit
-// into DNS as TXT records. Answer 204 and write nothing so cached pages don't error.
+// Retired /api/gate. Used to write gate submits into DNS as TXT records.
+// Answer 204 and write nothing so cached pages don't error. /api/hit was removed Nov 9 2026.
 function retired() {
   return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
 }
@@ -526,9 +526,11 @@ async function handle(request, env, ctx, qa = false) {
       if (request.method !== "POST" && request.method !== "DELETE") return new Response("Method not allowed", { status: 405, headers: { allow: "POST, DELETE", ...NO_STORE } });
       return handleFeedDelete(request, env, url);
     }
+    // /api/hit removed Nov 9 2026 (Sergeant biweekly cleanup): no tracker, no DNS TXT writes.
+    if (path === "/api/hit" || path.startsWith("/api/hit/")) {
+      return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
+    }
     if (
-      path === "/api/hit" ||
-      path.startsWith("/api/hit/") ||
       path === "/api/gate" ||
       path.startsWith("/api/gate/")
     ) {
@@ -559,7 +561,6 @@ async function handle(request, env, ctx, qa = false) {
     }
     return new HTMLRewriter()
       .on('script[src*="js/gate.js"]', new DropScript())
-      .on('script[src*="js/hit.js"]', new DropScript())
       .on("head", new HeadInjector(qa))
       .transform(response);
 }
