@@ -2,7 +2,7 @@
 .pas-ep{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:32px;align-items:center}
 .pas-media{width:100%;max-width:360px}
 .pas-video{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:contain;background:#000}
-.pas-copy h2,.pas-copy h3{margin:0 0 16px}
+.pas-ep .pas-copy h2,.pas-ep .pas-copy h3{margin:0 0 16px}
 .pas-list{padding:40px 0 8px}
 .pas-eps{display:grid;gap:32px}
 @media (max-width:860px){.pas-ep{grid-template-columns:1fr;gap:16px}.pas-media{max-width:none}.pas-copy{order:-1}}
