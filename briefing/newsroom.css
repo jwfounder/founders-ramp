@@ -23,6 +23,7 @@
 .news-meta time { color: var(--muted); }
 .card.news h3 { color: var(--ink); line-height: 1.15; }
 .news-source { margin-top: auto; padding-top: 14px; color: var(--ink); font-size: 13px; font-weight: 600; }
+.card.news.card-links { background: #fff; }
 .card.news.card-links a { color: inherit; text-decoration: none; }
 .card.news.card-links .news-source a { color: var(--red); text-decoration: underline; text-underline-offset: 3px; }
 .news-search { position: relative; max-width: 520px; margin: 0 0 20px; }

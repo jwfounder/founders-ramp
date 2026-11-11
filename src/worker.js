@@ -65,6 +65,86 @@ function cacheControlFor(path) {
   return null;
 }
 
+// Byte ranges for media files only (People Are Saying video). Static assets ignore Range and always answer 200
+// with the whole file, and Safari/iOS will not play video without 206. Every other path is untouched.
+// One range only (bytes=a-b, bytes=a-, bytes=-n); a multi-range, malformed or stale If-Range request gets the full 200.
+const RANGE_MEDIA = /^\/assets\/.+\.(?:mp4|m4a|mp3)$/;
+
+function sliceBody(body, start, end) {
+  const reader = body.getReader();
+  let pos = 0;
+  return new ReadableStream({
+    async pull(ctrl) {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) { ctrl.close(); return; }
+        const a = pos, b = pos + value.byteLength;
+        pos = b;
+        if (b <= start) continue;
+        const s = Math.max(start - a, 0), e = Math.min(end + 1 - a, value.byteLength);
+        if (s < e) ctrl.enqueue(value.subarray(s, e));
+        if (b > end) { ctrl.close(); reader.cancel().catch(() => {}); }
+        return;
+      }
+    },
+    cancel(reason) { return reader.cancel(reason); },
+  });
+}
+
+async function mediaRange(request, full) {
+  const headers = new Headers(full.headers);
+  headers.set("Accept-Ranges", "bytes");
+  const whole = () => new Response(full.body, { status: full.status, statusText: full.statusText, headers });
+  const range = request.headers.get("range");
+  if (!range) return whole();
+  const ifRange = request.headers.get("if-range");
+  if (ifRange && ifRange !== full.headers.get("etag")) return whole();
+  const m = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  if (!m || (m[1] === "" && m[2] === "")) return whole();
+  const head = request.method === "HEAD";
+  let size = Number(full.headers.get("content-length"));
+  let buf = null;
+  if (!Number.isSafeInteger(size) || size < 0 || full.headers.get("content-length") === null) {
+    if (head || !full.body) return whole();
+    buf = new Uint8Array(await full.arrayBuffer());
+    size = buf.byteLength;
+  }
+  let start, end;
+  if (m[1] === "") {
+    const n = Number(m[2]);
+    start = Math.max(0, size - n);
+    end = size - 1;
+    if (n === 0 || size === 0) start = size;   // bytes=-0 or an empty file: nothing satisfiable
+  } else {
+    start = Number(m[1]);
+    end = m[2] === "" ? size - 1 : Number(m[2]);
+    if (m[2] !== "" && end < start) return buf ? new Response(buf, { status: 200, headers }) : whole();   // invalid range: ignore it
+    end = Math.min(end, size - 1);
+  }
+  if (start >= size) {
+    if (full.body && !buf) full.body.cancel().catch(() => {});
+    return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}`, "Accept-Ranges": "bytes", "Cache-Control": "no-store" } });
+  }
+  const len = end - start + 1;
+  headers.set("Content-Range", `bytes ${start}-${end}/${size}`);
+  headers.set("Content-Length", String(len));
+  headers.delete("Content-Encoding");
+  let body = null;
+  if (head) {
+    if (full.body && !buf) full.body.cancel().catch(() => {});
+  } else if (buf) {
+    body = buf.slice(start, end + 1);
+  } else {
+    body = sliceBody(full.body, start, end);
+    if (typeof FixedLengthStream === "function") {   // Workers runtime: keeps Content-Length on a streamed body
+      const fixed = new FixedLengthStream(len);
+      body.pipeTo(fixed.writable).catch(() => {});
+      body = fixed.readable;
+    }
+  }
+  return new Response(body, { status: 206, headers });
+}
+
 class DropScript {
   element(element) {
     element.remove();
@@ -556,6 +636,9 @@ async function handle(request, env, ctx, qa = false) {
         response = new Response(response.body, response);
         response.headers.set("Cache-Control", cc);
         if (path.startsWith("/assets/social/")) response.headers.set("X-Robots-Tag", "noindex");
+      }
+      if (RANGE_MEDIA.test(path) && response.status === 200 && (request.method === "GET" || request.method === "HEAD")) {
+        return mediaRange(request, response);
       }
       return response;
     }

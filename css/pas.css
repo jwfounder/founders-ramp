@@ -3,6 +3,7 @@
 .pas-media{width:100%;max-width:360px}
 .pas-video{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:contain;background:#000}
 .pas-ep .pas-copy h2,.pas-ep .pas-copy h3{margin:0 0 16px}
+.home-pas{background:#fff}   /* red kicker + link need white: #e10600 is 4.97:1 on white, 4.51:1 on the page grey */
 .pas-list{padding:40px 0 8px}
 .pas-eps{display:grid;gap:32px}
 @media (max-width:860px){.pas-ep{grid-template-columns:1fr;gap:16px}.pas-media{max-width:none}.pas-copy{order:-1}}
