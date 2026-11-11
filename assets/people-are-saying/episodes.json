@@ -1,0 +1,13 @@
+{
+  "episodes": [
+    {
+      "number": 1,
+      "title": "People Are Saying, Episode 1: Does time kill all deals?",
+      "video": "/assets/people-are-saying/ep1-nointro-4x5.mp4",
+      "captions": "/assets/people-are-saying/ep1-nointro.vtt",
+      "poster": "/assets/people-are-saying/ep1-nointro-cover.webp",
+      "width": 1080,
+      "height": 1350
+    }
+  ]
+}
