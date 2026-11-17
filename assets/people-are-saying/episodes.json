@@ -8,6 +8,15 @@
       "poster": "/assets/people-are-saying/ep1-nointro-cover.webp",
       "width": 1080,
       "height": 1350
+    },
+    {
+      "number": 2,
+      "title": "People Are Saying, Episode 2: “Let's show them the art of the possible.”",
+      "video": "/assets/people-are-saying/ep2-4x5.mp4",
+      "captions": "/assets/people-are-saying/ep2.vtt",
+      "poster": "/assets/people-are-saying/ep2-cover.webp",
+      "width": 1080,
+      "height": 1350
     }
   ]
 }
