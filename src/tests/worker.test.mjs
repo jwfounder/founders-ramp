@@ -52,12 +52,13 @@ test("allowlist: every /go/ destination is https on an allowed prefix", () => {
     assert.ok(PREFIXES.some((p) => t.startsWith(p)), slug + " -> " + t);
     assert.doesNotThrow(() => new URL(t));
   }
-  assert.equal(GO.book, "https://cal.com/justin-weller-nsrjlg/30min");
+  assert.equal(GO.book, "https://cal.com/justin-weller-nsrjlg/15min");
+  assert.equal(GO.book15, "https://cal.com/justin-weller-nsrjlg/15min");
   assert.equal(GO.calculator, "https://www.foundersramp.net/tools/first-hire-payback/");
 });
 
 test("existing slugs: Location byte-identical when no query is sent", async () => {
-  for (const slug of ["2026-10-20-li-comment", "2026-10-20-x-reply", "2026-10-22-li-jobs", "2026-10-22-x-jobs", "book", "calculator"]) {
+  for (const slug of ["2026-10-20-li-comment", "2026-10-20-x-reply", "2026-10-22-li-jobs", "2026-10-22-x-jobs", "book", "book15", "calculator"]) {
     const { res, loc } = await go("/go/" + slug);
     assert.equal(res.status, 302, slug);
     assert.equal(loc, GO[slug], slug);
@@ -69,9 +70,21 @@ test("existing slugs: Location byte-identical when no query is sent", async () =
   assert.equal(loc, GO.book, "trailing slash");
 });
 
+test("/go/book and /go/book15 both go to the 15-minute event", async () => {
+  const a = await go("/go/book");
+  const b = await go("/go/book15");
+  const c = await go("/go/book15/");
+  assert.equal(a.res.status, 302);
+  assert.equal(b.res.status, 302);
+  assert.equal(c.res.status, 302);
+  assert.equal(a.loc, "https://cal.com/justin-weller-nsrjlg/15min");
+  assert.equal(b.loc, "https://cal.com/justin-weller-nsrjlg/15min");
+  assert.equal(c.loc, "https://cal.com/justin-weller-nsrjlg/15min");
+});
+
 test("utm_* and ref are passed on; other params are dropped", async () => {
   const { loc } = await go("/go/book?utm_source=partner&utm_campaign=acme-cfo&ref=Acme-CFO&email=a%40b.com&next=https://evil.com&utm_foo=x");
-  assert.equal(loc, "https://cal.com/justin-weller-nsrjlg/30min?utm_source=partner&utm_campaign=acme-cfo&ref=acme-cfo");
+  assert.equal(loc, "https://cal.com/justin-weller-nsrjlg/15min?utm_source=partner&utm_campaign=acme-cfo&ref=acme-cfo");
   const u = new URL(loc);
   assert.equal(u.origin, "https://cal.com");
   assert.equal(u.searchParams.get("email"), null);
@@ -206,7 +219,7 @@ test("ev.js: calculator run counted once per page view", () => {
 
 test("ev.js: booking link clicks (left click and middle click), not right click or other links", () => {
   const p = runEv("/home/");
-  const cal = p.link("https://cal.com/justin-weller-nsrjlg/30min", "  Get a 20 minute\n look ");
+  const cal = p.link("https://cal.com/justin-weller-nsrjlg/15min", "  Get a 20 minute\n look ");
   p.fire("click", { ...cal, button: 0 });
   p.fire("auxclick", { ...cal, button: 1 });
   p.fire("auxclick", { ...cal, button: 2 });
